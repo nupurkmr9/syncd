@@ -15,13 +15,13 @@ We propose a pipeline for synthetic training data generation consisting of multi
 ***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br>
 [Nupur Kumari](https://nupurkmr9.github.io/), [Xi Yin](https://xiyinmsu.github.io), [Jun-Yan Zhu](https://www.cs.cmu.edu/~junyanz/), [Ishan Misra](https://imisra.github.io), [Samaneh Azadi](https://github.com/azadis)<br>
 
-### [website]()  | [paper]() 
+### [website](https://www.cs.cmu.edu/~syncd-project/)  | [paper]() 
 
 ## Sample Generated Dataset
 
 https://github.com/user-attachments/assets/874eace8-a1dd-4c31-9226-f1cfb24f42bb
 
-<strong>Note:</strong> We will be releasing our final filtered dataset later this week.
+<strong>Note:</strong> We will release our final filtered dataset soon.
 
 ## Results
 
@@ -77,6 +77,14 @@ We finetune a pre-trained IP-Adapter based model (global feature injection) on o
 
 ## Getting Started
 
+```
+cd dataset
+
+conda create -n syncd python=3.10
+conda activate syncd
+pip3 install torch torchvision torchaudio (Or appropriate torch>2.0 from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))
+pip install -r assets/requirements.txt
+```
 
 **Dataset Generation**: Please refer [here](dataset/README.md) for dataset generation code. 
 

@@ -1,0 +1,78 @@
+model:
+  base_learning_rate: 5.0e-6
+  target: pipelines.sdxl_pipeline.model.GenCDDiffusionSDXL
+  params:
+    pretrained_model_name_or_path: "bghira/terminus-xl-gamma-v1"
+    num: 3
+    regularization_prob: 0.0
+    trainkeys: lora+to_k_ip+to_v_ip
+    add_lora_self: True
+    add_lora_text: False
+    global_condition_type: ip_adapter
+    masked: True
+    shared_attn: True
+    rescale_betas_zero_snr: True
+    prediction_type: "v_prediction"
+    ip_adapter_name: "ip-adapter-plus_sdxl_vit-h.bin"
+
+data:
+  target: data.data.CustomLoader
+  params:
+    batch_size: 1
+    num_workers: 4
+    rootdir: [['../dataset/assets/metadata/rigid_data']]
+    img_size: 1024
+    numref: 3
+    repeat: 1
+    regularization: 0.0
+    drop_both: 0.05
+    drop_txt: 0.05
+    drop_im: 0.05
+    drop_mask: 0.1
+    filter_aesthetics: 6.0
+    filter_dino: 0.7
+    dilate_mask: True
+    random_crop: True
+    shuffle: False
+    random_permute: True
+    mode: rigid
+    kernel_size: 5
+
+lightning:
+  modelcheckpoint:
+    target: lightning.pytorch.callbacks.ModelCheckpoint
+    params:
+      save_top_k: -1
+      save_on_train_epoch_end: False
+      every_n_train_steps: 5000
+
+  callbacks:
+
+    cuda_callback:
+      target: main.CUDACallback
+
+    image_logger:
+      target: main.ImageLogger
+      params:
+        disabled: False
+        enable_autocast: False
+        batch_frequency: 1000
+        max_images: 8
+        log_before_first_step: False
+        log_on_batch_idx: False
+        log_images_kwargs:
+          use_ema_scope: False
+          N: 1
+          n_rows: 2
+
+  trainer:
+    devices: 0,1,2,3,4,5,6,7
+    benchmark: True
+    num_sanity_val_steps: 0
+    accumulate_grad_batches: 4
+    max_steps: 20100
+    num_nodes: 1
+    limit_val_batches: 0.025
+    check_val_every_n_epoch: 20
+    precision: bf16-mixed
+    accelerator: "gpu"
