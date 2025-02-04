@@ -1,17 +1,13 @@
   
 import argparse
 import glob
-import json
-import multiprocessing as mp
 import os
 import sys
-import time
 from pathlib import Path
 
 import kornia
 import numpy as np
 import torch
-import torchvision
 from diffusers import AutoencoderKL, EulerAncestralDiscreteScheduler
 from diffusers.models.embeddings import ImageProjection
 from einops import rearrange
@@ -26,7 +22,6 @@ from pipelines.sdxl_pipeline.pipeline import SDXLCustomPipeline
 
 clip_mean = torch.Tensor([0.48145466, 0.4578275, 0.40821073])
 clip_std =  torch.Tensor([0.26862954, 0.26130258, 0.27577711])
-DREAMBOOTH_DIR = "/ocean/projects/cis240035p/nkumari/Cap3D/dreambooth/dataset"
 
 
 def preprocess(x, pipeline):

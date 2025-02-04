@@ -78,8 +78,7 @@ We finetune a pre-trained IP-Adapter based model (global feature injection) on o
 ## Getting Started
 
 ```
-cd dataset
-
+git clone https://github.com/nupurkmr9/syncd-project.git
 conda create -n syncd python=3.10
 conda activate syncd
 pip3 install torch torchvision torchaudio (Or appropriate torch>2.0 from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))

@@ -52,9 +52,9 @@ terminators = [
 def get_output(messages):
     texts = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
     tokenizer.pad_token_id = tokenizer.eos_token_id 
-    inputs = tokenizer(texts, padding="longest", return_tensors="pt", padding_side='left')
+    inputs = tokenizer(texts, padding="longest", return_tensors="pt", padding_side="left")
     inputs = {key: val.cuda() for key, val in inputs.items()}
-    temp_texts=tokenizer.batch_decode(inputs["input_ids"], skip_special_tokens=True)
+    temp_texts = tokenizer.batch_decode(inputs["input_ids"], skip_special_tokens=True)
 
     gen_tokens = model.generate(
         **inputs, 
@@ -138,7 +138,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="get prompts from LLM")
     parser.add_argument("--outdir", type=str, default="assets/generated_prompts")
     parser.add_argument("--captions", type=str, help='path to CAP3D csv. Required for objaverse rigid category captions')
-    parser.add_argument('--rigid', action="store_true")
+    parser.add_argument("--rigid", action="store_true")
     args = parser.parse_args()
     return args
 

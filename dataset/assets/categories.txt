@@ -1,0 +1,16 @@
+Hamster
+Rabbit
+Fox
+Parrot
+Bird
+Squirrel
+Cat
+Dog
+Alpaca
+Mouse
+Frog
+Bear
+Woodpecker
+Duck
+Fish
+Monkey

@@ -1,5 +1,7 @@
 ## Getting Started
 
+Basic environment setup is descriped [here](https://github.com/nupurkmr9/syncd-project/blob/main/README.md#getting-started)
+
 ### Sampling
 
 ```

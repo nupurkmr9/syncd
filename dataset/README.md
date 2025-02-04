@@ -1,10 +1,11 @@
 ## Getting Started
 
-We require a GPU with atleast 48GB VRAM. 
+We require a GPU with atleast 48GB VRAM. Basic environment setup is descriped [here](https://github.com/nupurkmr9/syncd-project/blob/main/README.md#getting-started)
 
 ### Defomable dataset generation
 
 ```
+cd dataset
 python gen_deformable.py --save_attn_mask --outdir assets/metadata/deformable_data 
 ```
 

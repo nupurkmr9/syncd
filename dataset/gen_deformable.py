@@ -140,6 +140,5 @@ def main(args):
 
 
 if __name__ == "__main__":
-    # distributed setting
     args = parse_args()
     main(args)

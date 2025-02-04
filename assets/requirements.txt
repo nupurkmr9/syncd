@@ -1,0 +1,13 @@
+diffusers
+transformers
+lightning
+einops
+sentencepiece
+protobuf
+accelerate
+wandb
+natsort
+omegaconf
+kornia
+peft
+git+https://github.com/openai/CLIP.git
