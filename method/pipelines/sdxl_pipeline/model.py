@@ -21,6 +21,7 @@ PIPELINECLASS = {
             "sdxl": SDXLCustomPipeline,
         }
 
+
 class GenCDDiffusionBase(L.LightningModule):
     def __init__(
         self,
@@ -57,7 +58,7 @@ class GenCDDiffusionBase(L.LightningModule):
         self.trainkeys = trainkeys.split('+')
         self.torch_dtype = torch.float32
         self.masked = masked
-        self.ip_adapter_scale=ip_adapter_scale
+        self.ip_adapter_scale = ip_adapter_scale
         self.ip_adapter_name = ip_adapter_name
         self.shared_attn = shared_attn
         self.input_key = 'images'
@@ -65,18 +66,16 @@ class GenCDDiffusionBase(L.LightningModule):
         self.training_scheduler = training_scheduler
 
         pipeline, batchkeys = self.setup_pipeline(pretrained_model_name_or_path,
-                                       global_condition_type,
-                                       ip_adapter_scale,
-                                       ip_adapter_name,
-                                       torch_dtype=self.torch_dtype,
-                                       )
+                                                  global_condition_type,
+                                                  ip_adapter_scale,
+                                                  ip_adapter_name,
+                                                  torch_dtype=self.torch_dtype)
         self.batchkeys = batchkeys
 
-        self.noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config, 
-                                                         rescale_betas_zero_snr=rescale_betas_zero_snr)
+        self.noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config, rescale_betas_zero_snr=rescale_betas_zero_snr)
         print(self.noise_scheduler.config)
-        
-        ## Initialize all submodules as independent modules and set requires grad
+
+        # Initialize all submodules as independent modules and set requires grad
         self.unet = pipeline.unet
         self.vae = pipeline.vae
         self.text_encoder = pipeline.text_encoder
@@ -93,7 +92,7 @@ class GenCDDiffusionBase(L.LightningModule):
             self.image_encoder.requires_grad_(False)
         self.unet.requires_grad_(False)
 
-        ## Add LoRA modules to UNet
+        # Add LoRA modules to UNet
         if add_lora_text or add_lora_self:
             target_modules = []
             if add_lora_text:
@@ -109,7 +108,7 @@ class GenCDDiffusionBase(L.LightningModule):
 
             self.unet.add_adapter(unet_lora_config)
 
-        ## Set requires grad to trainable parameters
+        # Set requires grad to trainable parameters
         if self.global_condition_type is not None and 'encoder_hid_proj' in self.trainkeys:
             for param in self.unet.encoder_hid_proj.parameters():
                 param.requires_grad_(True)
@@ -120,19 +119,19 @@ class GenCDDiffusionBase(L.LightningModule):
                         param.requires_grad_(True)
                     for param in attn_proc.attn_op.to_v_ip.parameters():
                         param.requires_grad_(True)
-        
+
         del pipeline
         self.use_ema = use_ema
         if self.use_ema:
             ema_unet = self.unet
             self.ema_unet = EMAModel(ema_unet.parameters(), model_cls=UNet2DConditionModel, model_config=ema_unet.config)
-        
+
         self.register_buffer("clip_mean", torch.Tensor([0.48145466, 0.4578275, 0.40821073]), persistent=False)
         self.register_buffer("clip_std", torch.Tensor([0.26862954, 0.26130258, 0.27577711]), persistent=False)
 
     def setup_pipeline(self, pretrained_model_name_or_path, global_condition_type, ip_adapter_scale, ip_adapter_name, torch_dtype=torch.float32):
         pass
-    
+
     def on_load_checkpoint(self, checkpoint):
         # for loading partial state dict.
         layers = []
@@ -160,12 +159,12 @@ class GenCDDiffusionBase(L.LightningModule):
 
     @torch.no_grad()
     def encode_target_images(self, images):
-        latents = self.vae.encode(images).latent_dist.sample()  * self.vae.config.scaling_factor
+        latents = self.vae.encode(images).latent_dist.sample() * self.vae.config.scaling_factor
         return latents
 
     @torch.no_grad()
     def preprocess(self, x):
-        # for CLIP model 
+        # for CLIP model
         # normalize to [0,1]
         x = kornia.geometry.resize(x, (224, 224), interpolation="bicubic", align_corners=True, antialias=True,)
         x = (x + 1.0) / 2.0
@@ -215,7 +214,7 @@ class GenCDDiffusionBase(L.LightningModule):
         params += list(filter(lambda p: p.requires_grad, self.unet.parameters()))
 
         optimizer = torch.optim.AdamW(params, lr=lr)
-        return {'optimizer': optimizer }
+        return {'optimizer': optimizer}
 
 
 class GenCDDiffusionSDXL(GenCDDiffusionBase):
@@ -232,7 +231,7 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
         pipeline = SDXLCustomPipeline.from_pretrained(pretrained_model_name_or_path,
                                                       vae=vae,
                                                       torch_dtype=torch_dtype,
-                                                      global_condition_type=global_condition_type, 
+                                                      global_condition_type=global_condition_type,
                                                       ip_adapter_scale=ip_adapter_scale,
                                                       ip_adapter_name=ip_adapter_name,
                                                       set_adapter=True,
@@ -249,7 +248,7 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
         prompt_embeds_list = []
         captions = batch['prompts']
 
-        for tokenizer, text_encoder in zip([self.tokenizer, self.tokenizer_2 ], [self.text_encoder, self.text_encoder_2]):
+        for tokenizer, text_encoder in zip([self.tokenizer, self.tokenizer_2], [self.text_encoder, self.text_encoder_2]):
             text_inputs = tokenizer(captions, padding="max_length", max_length=tokenizer.model_max_length, truncation=True, return_tensors="pt",)
             text_input_ids = text_inputs.input_ids
             prompt_embeds = text_encoder(text_input_ids.to(text_encoder.device), output_hidden_states=True, return_dict=False,)
@@ -286,7 +285,7 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
             if batch['regularization'] and not output_hidden_state:
                 image_embeds = torch.zeros_like(image_embeds)
             unet_added_conditions.update({"image_embeds": image_embeds})
-        cross_attention_kwargs = {'shared_attn': self.shared_attn,  'num': self.num, 'self_attn_mask': batch['masks'] if self.masked else None,}
+        cross_attention_kwargs = {'shared_attn': self.shared_attn, 'num': self.num, 'self_attn_mask': batch['masks'] if self.masked else None}
 
         # pass the reference image arguments to get reference features without LoRA applied.
         ref_dict = {}
@@ -294,7 +293,7 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
                     rearrange(rearrange(noisy_latents, "(b n) ... -> b n ...", n=self.num)[:, 1:], "b n ... -> (b n) ..."),
                     rearrange(rearrange(timesteps, "(b n) -> b n", n=self.num)[:, 1:], "b n -> (b n)"),
                     rearrange(rearrange(prompt_dict['prompt_embeds'], "(b n) ... -> b n ...", n=self.num)[:, 1:], "b n ... -> (b n) ..."),
-                    added_cond_kwargs={x:rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, 1:], "b n ... -> (b n) ...") for x,v in unet_added_conditions.items()},
+                    added_cond_kwargs={x: rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, 1:], "b n ... -> (b n) ...") for x, v in unet_added_conditions.items()},
                     cross_attention_kwargs={'shared_attn': self.shared_attn, 'scale': 0., 'num': self.num, 'mode': 'w', 'ref_dict': ref_dict},
                     return_dict=False,
                 )[0]
@@ -303,7 +302,7 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
         cross_attention_kwargs.update({'ref_dict': ref_dict, 'mode': 'r' if not batch['regularization'] else 'n'})
         noisy_latents = rearrange(rearrange(noisy_latents, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...")
         timesteps = rearrange(rearrange(timesteps, "(b n) -> b n", n=self.num)[:, :1], "b n -> (b n)")
-        unet_added_conditions = {x:rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...") for x,v in unet_added_conditions.items()}
+        unet_added_conditions = {x: rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...") for x, v in unet_added_conditions.items()}
         prompt_dict['prompt_embeds'] = rearrange(rearrange(prompt_dict['prompt_embeds'], "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...")
         latents = rearrange(rearrange(latents, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...")
         noise = rearrange(rearrange(noise, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...")
@@ -328,22 +327,22 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
 
         loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
         loss = loss.mean()
-        loss_dict = {"loss": loss }
+        loss_dict = {"loss": loss}
         return loss, loss_dict
-    
+
     @torch.no_grad()
     def log_images(self, batch, N: int = 1, sample: bool = True, **kwargs,):
-        
+
         pipelineclass = PIPELINECLASS[self.pipeline_model]
         pipeline = pipelineclass.from_pretrained(self.pretrained_model_name_or_path,
-                                                      vae=self.vae,
-                                                      unet=self.unet,
-                                                      image_encoder=self.image_encoder,
-                                                      torch_dtype=self.dtype,
-                                                      global_condition_type=self.global_condition_type, 
-                                                      ip_adapter_scale=self.ip_adapter_scale,
-                                                      ip_adapter_name=self.ip_adapter_name,
-                                                      set_adapter=False).to(self.device)
+                                                 vae=self.vae,
+                                                 unet=self.unet,
+                                                 image_encoder=self.image_encoder,
+                                                 torch_dtype=self.dtype,
+                                                 global_condition_type=self.global_condition_type,
+                                                 ip_adapter_scale=self.ip_adapter_scale,
+                                                 ip_adapter_name=self.ip_adapter_name,
+                                                 set_adapter=False).to(self.device)
         pipeline.scheduler = EulerAncestralDiscreteScheduler.from_config(pipeline.scheduler.config,  rescale_betas_zero_snr=self.rescale_betas_zero_snr)
 
         x, batch = self.get_input(batch)
@@ -353,9 +352,9 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
         mask = batch['masks']
         mask = mask[:N]
         mask = rearrange(mask, "(b n) ... -> b n ...", b=mask.shape[0] // self.num, n=self.num)
-        mask[:,:1] = 1.
+        mask[:, :1] = 1.
         latents_mask = torch.zeros_like(mask)
-        latents_mask[:,:1] = 1.
+        latents_mask[:, :1] = 1.
         latents_mask = rearrange(latents_mask, "b n ... -> (b n) ...")
         mask = rearrange(mask, "b n ... -> (b n) ...")
 
@@ -363,7 +362,7 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
         log["masks"] = mask
         log["inputs"] = x
         log["inputs_cropped"] = batch['ref_images'][:N]
-        
+
         ip_adapter_image = None
         ip_adapter_image_un = None
         if self.global_condition_type is not None:
@@ -371,15 +370,15 @@ class GenCDDiffusionSDXL(GenCDDiffusionBase):
             ip_adapter_image_un, output_hidden_state = self.encode_condition_image(torch.zeros_like(batch['ref_images'][:N]), batch['drop_im'])
             if not output_hidden_state:
                 ip_adapter_image_un = torch.zeros_like(ip_adapter_image_un)
-            images = pipeline(batch['prompts'][:N], 
-                                latents_ref=latents, 
-                                ip_adapter_image_embeds=[ip_adapter_image, ip_adapter_image_un],
-                                cross_attention_kwargs={'shared_attn': self.shared_attn, 'num': self.num, 'self_attn_mask': torch.cat([torch.zeros_like(mask), mask], 0)},
-                                latents_mask=latents_mask,
-                                guidance_scale=7.5,
-                                height=x.shape[2],
-                                width=x.shape[3],
-                                return_dict=False)[0]
+            images = pipeline(batch['prompts'][:N],
+                              latents_ref=latents,
+                              ip_adapter_image_embeds=[ip_adapter_image, ip_adapter_image_un],
+                              cross_attention_kwargs={'shared_attn': self.shared_attn, 'num': self.num, 'self_attn_mask': torch.cat([torch.zeros_like(mask), mask], 0)},
+                              latents_mask=latents_mask,
+                              guidance_scale=7.5,
+                              height=x.shape[2],
+                              width=x.shape[3],
+                              return_dict=False)[0]
             log["samples"] = images
 
         log['txt'] = log_txt_as_img(x.shape[2:], batch['prompts'], size=x.shape[2] // 20)

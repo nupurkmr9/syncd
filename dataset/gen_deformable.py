@@ -17,6 +17,7 @@ text_seq = 512
 axes_dims_rope = (16, 56, 56)
 torch_dtype = torch.bfloat16
 
+
 def get_token_indices(prompts):
     token_indices = []
     ref_tokens = tokenizer.encode(prompts[0])[:-1]
@@ -28,7 +29,7 @@ def get_token_indices(prompts):
         ref_tokens_length = len(ref_tokens)
         for i in range(len(tokens) - ref_tokens_length + 1):
             # Check if the sublist matches part of the larger list
-            if tokens[i : i + ref_tokens_length] == ref_tokens:
+            if tokens[i: i + ref_tokens_length] == ref_tokens:
                 start = i
                 end = i + ref_tokens_length
         token_indices.append([start, end])
@@ -68,7 +69,7 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, prompt_file=None
 
         for numdesc, desc in enumerate(promptsdesc):
             for num_sample, prompt in enumerate(prompts):
-                token_indices = get_token_indices([cat_] + prompt )
+                token_indices = get_token_indices([cat_] + prompt)
 
                 editor = AttentionStore(token_indices=token_indices, num_att_layers=57, WIDTH=WIDTH)
 
@@ -77,7 +78,7 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, prompt_file=None
                         [f'{x}. {desc}. wide angle shot' for x in prompt],
                         width=WIDTH,
                         height=HEIGHT,
-                        num_inference_steps=inference_step, 
+                        num_inference_steps=inference_step,
                         joint_attention_kwargs={'editor': editor},
                         guidance_scale=3.5,
                         return_dict=False
@@ -90,7 +91,7 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, prompt_file=None
                     im_ = model_output_old[numref_]
                     im_.save(f"{outdir}/{cat_}_{numdesc}_{num_sample}_{rank}_{numref_}.jpg")
                     if args.save_attn_mask:
-                        im_ = Image.fromarray((torch.clip(attn_mask[numref_,0], 0., 1.).cpu().numpy()* 255).astype(np.uint8))
+                        im_ = Image.fromarray((torch.clip(attn_mask[numref_, 0], 0., 1.).cpu().numpy() * 255).astype(np.uint8))
                         im_.save(f"{outdir}/masks/{cat_}_{numdesc}_{num_sample}_{rank}_{numref_}.jpg")
 
                 metadata.append({
@@ -102,10 +103,10 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, prompt_file=None
 
             with open(f'{outdir}/metadata_{rank}.json', 'w') as f:
                 json.dump(metadata, f)
-    
+
     with open(f'{outdir}/metadata_{rank}.json', 'w') as f:
         json.dump(metadata, f)
-                        
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run a sampling scripts for the dreammatcher')

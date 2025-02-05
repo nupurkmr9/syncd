@@ -15,7 +15,7 @@ We propose a pipeline for synthetic training data generation consisting of multi
 ***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br>
 [Nupur Kumari](https://nupurkmr9.github.io/), [Xi Yin](https://xiyinmsu.github.io), [Jun-Yan Zhu](https://www.cs.cmu.edu/~junyanz/), [Ishan Misra](https://imisra.github.io), [Samaneh Azadi](https://github.com/azadis)<br>
 
-### [website](https://www.cs.cmu.edu/~syncd-project/)  | [paper]() 
+### [website](https://www.cs.cmu.edu/~syncd-project/)  | [paper](https://arxiv.org/abs/2502.01720) 
 
 ## Sample Generated Dataset
 
@@ -112,7 +112,7 @@ We are grateful to the below works for their code/data/model. Our code is built 
 @article{kumari2025syncd,
   title={Generating Multi-Image Synthetic Data for Text-to-Image Customization},
   author={Kumari, Nupur and Yin, Xi and Zhu, Jun-Yan and Misra, Ishan and Azadi, Samaneh},
-  journal = {ArXiv},
-  year = {2025}
+  journal={ArXiv},
+  year={2025}
 }
 ```

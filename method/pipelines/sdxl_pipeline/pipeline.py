@@ -8,13 +8,11 @@ import torch.nn.functional as F
 import torch.utils.checkpoint
 from diffusers import AutoencoderKL, UNet2DConditionModel
 from diffusers.image_processor import PipelineImageInput
-from diffusers.models import AutoencoderKL, UNet2DConditionModel
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl import (
     retrieve_timesteps,
 )
 from diffusers.schedulers import KarrasDiffusionSchedulers
-from diffusers.schedulers.scheduling_utils import KarrasDiffusionSchedulers
 from diffusers.utils import is_torch_xla_available
 from diffusers.utils.torch_utils import randn_tensor
 from einops import rearrange
@@ -50,10 +48,10 @@ class RefAttnProc(torch.nn.Module):
         scale: float = 1.0,
         self_attn_mask: Optional[torch.Tensor] = None,
         shared_attn: bool = False,
-        num: int=3,
-        val: bool=False,
-        mode="w", 
-        ref_dict: dict = None, 
+        num: int = 3,
+        val: bool = False,
+        mode: str = "w",
+        ref_dict: dict = None,
     ):
         if self.selfattn and shared_attn:
             hw = hidden_states.shape[1]
@@ -63,10 +61,10 @@ class RefAttnProc(torch.nn.Module):
                 return self.attn_op(attn, hidden_states, encoder_hidden_states=encoder_hidden_states, attention_mask=attention_mask, temb=temb, scale=scale)
             elif mode == 'r':
                 hidden_states_cached = ref_dict.pop(self.name)
-                hidden_states = rearrange(torch.cat([rearrange(hidden_states, "b ... -> b 1 ..."),  
-                                           rearrange(hidden_states_cached, "(b n) ... -> b n ...", n=num-1)], dim=1), "b n hw c -> b (n hw) c", n=num).contiguous()
-            
-            if self_attn_mask is not None and mode == 'r': 
+                hidden_states = rearrange(torch.cat([rearrange(hidden_states, "b ... -> b 1 ..."),
+                                          rearrange(hidden_states_cached, "(b n) ... -> b n ...", n=num-1)], dim=1), "b n hw c -> b (n hw) c", n=num).contiguous()
+
+            if self_attn_mask is not None and mode == 'r':
                 if 'attention_mask' in ref_dict and val and H in ref_dict['attention_mask']:
                     attention_mask = ref_dict['attention_mask'][H]
                 else:
@@ -74,10 +72,9 @@ class RefAttnProc(torch.nn.Module):
                     attention_mask = rearrange(attention_mask, "(b n) c h w-> b (n h w) c", b=hidden_states.shape[0], n=num, h=H, w=W, c=1)
                     attention_mask = torch.einsum("b i d, b j d -> b i j", torch.ones_like(attention_mask[:, :hw]), attention_mask)
                     attention_mask[:, :hw, :hw] = 1
-                    
-                    _MASKING_VALUE = -65504. # -6400 #torch.finfo(hidden_states.dtype).min #-6400 #torch.finfo(hidden_states.dtype).min
+
+                    _MASKING_VALUE = -65504.  # torch.finfo(hidden_states.dtype).min
                     attention_mask = attention_mask.masked_fill(attention_mask == 0, _MASKING_VALUE).detach()
-                    # attention_mask = attention_mask.bool()
                     attention_mask = rearrange(attention_mask.unsqueeze(0).expand(attn.heads, -1, -1, -1), "nh b ... -> b nh ...")
                     if 'attention_mask' in ref_dict:
                         ref_dict['attention_mask'][H] = attention_mask
@@ -150,15 +147,15 @@ def normalized_guidance_image(pred_uncond, pred_cond, pred_img, guidance_scale, 
     diff_txt = pred_cond - pred_img
 
     ones = torch.ones_like(diff_txt)
-    diff_norm_txt = diff_txt.norm(p=2, dim=[-1, -2, -3], keepdim=True) 
-    diff_norm_img = diff_img.norm(p=2, dim=[-1, -2, -3], keepdim=True) 
+    diff_norm_txt = diff_txt.norm(p=2, dim=[-1, -2, -3], keepdim=True)
+    diff_norm_img = diff_img.norm(p=2, dim=[-1, -2, -3], keepdim=True)
     norm_threshold = torch.minimum(diff_norm_img, diff_norm_txt)
-    scale_factor = torch.minimum(ones, norm_threshold / diff_norm_txt) 
+    scale_factor = torch.minimum(ones, norm_threshold / diff_norm_txt)
     diff_txt = diff_txt * scale_factor
-    scale_factor = torch.minimum(ones, norm_threshold / diff_norm_img) 
+    scale_factor = torch.minimum(ones, norm_threshold / diff_norm_img)
     diff_img = diff_img * scale_factor
 
-    pred_guided = pred_img + img_scale * diff_img + guidance_scale *  diff_txt
+    pred_guided = pred_img + img_scale * diff_img + guidance_scale * diff_txt
     return pred_guided
 
 
@@ -183,26 +180,24 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
         set_adapter=False,
     ):
         super().__init__(vae=vae,
-            text_encoder=text_encoder,
-            text_encoder_2=text_encoder_2,
-            tokenizer=tokenizer,
-            tokenizer_2=tokenizer_2,
-            unet=unet,
-            scheduler=scheduler,
-            image_encoder=image_encoder,
-            feature_extractor=feature_extractor,
-            force_zeros_for_empty_prompt=force_zeros_for_empty_prompt,
-            add_watermarker=add_watermarker,
-        )
-        self.batchkeys = ['images', 'images_cropped', 'txt', 'mask', 'maskloss', 'original_size_as_tuple', 'crop_coords_top_left', 'target_size_as_tuple']
-        
+                         text_encoder=text_encoder,
+                         text_encoder_2=text_encoder_2,
+                         tokenizer=tokenizer,
+                         tokenizer_2=tokenizer_2,
+                         unet=unet,
+                         scheduler=scheduler,
+                         image_encoder=image_encoder,
+                         feature_extractor=feature_extractor,
+                         force_zeros_for_empty_prompt=force_zeros_for_empty_prompt,
+                         add_watermarker=add_watermarker)
+
         self.global_condition_type = global_condition_type
         if set_adapter:
             if 'vit-h' in ip_adapter_name:
                 self.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name=ip_adapter_name, image_encoder_folder="models/image_encoder")
             else:
                 self.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models", weight_name=ip_adapter_name)
-        
+
         self.set_ip_adapter_scale(ip_adapter_scale)
         if set_adapter:
             unet_lora_attn_procs = dict()
@@ -215,14 +210,11 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
                 unet_lora_attn_procs[name] = RefAttnProc(default_attn_proc, selfattn=selfattn, name=name)
 
             self.unet.set_attn_processor(unet_lora_attn_procs)
-        
 
-    def prepare_ip_adapter_image_embeds(
-        self, ip_adapter_image, ip_adapter_image_embeds, device, num_images_per_prompt, do_classifier_free_guidance, image_guidance_scale
-    ):
-        image_embeds = ip_adapter_image_embeds[0] #self.image_encoder(ip_adapter_image).image_embeds
+    def prepare_ip_adapter_image_embeds(self, ip_adapter_image, ip_adapter_image_embeds, device, num_images_per_prompt, do_classifier_free_guidance, image_guidance_scale):
+        image_embeds = ip_adapter_image_embeds[0]
         if do_classifier_free_guidance:
-            negative_image_embeds = ip_adapter_image_embeds[1] #torch.zeros_like(image_embeds)
+            negative_image_embeds = ip_adapter_image_embeds[1]
 
         single_image_embeds = torch.cat([image_embeds] * num_images_per_prompt, dim=0)
         if do_classifier_free_guidance:
@@ -288,9 +280,9 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
         ###
         latents_ref: Optional[torch.Tensor] = None,
         latents_mask: Optional[torch.Tensor] = None,
-        ip_adapter_scale: float=1.0,
-        image_guidance_scale: float=0.0,
-        adaptive_image_guidance_scale: float=0.0,
+        ip_adapter_scale: float = 1.0,
+        image_guidance_scale: float = 0.0,
+        adaptive_image_guidance_scale: float = 0.0,
         **kwargs,
     ):
 
@@ -449,9 +441,9 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
         added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
         if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
             added_cond_kwargs["image_embeds"] = image_embeds
-        added_cond_kwargs_ref = {x:rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, 1:], "b n ... -> (b n) ...") for x,v in added_cond_kwargs.items()}
-        added_cond_kwargs = {x:rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...") for x,v in added_cond_kwargs.items()}
-        
+        added_cond_kwargs_ref = {x: rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, 1:], "b n ... -> (b n) ...") for x, v in added_cond_kwargs.items()}
+        added_cond_kwargs = {x: rearrange(rearrange(v, "(b n) ... -> b n ...", n=self.num)[:, :1], "b n ... -> (b n) ...") for x, v in added_cond_kwargs.items()}
+
         # 11. Start sampling
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -465,7 +457,7 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
                 # expand the latents if we are doing classifier free guidance
                 latent_model_input = torch.cat([latents] * num_repeat)
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-                
+
                 ref_dict = {}
                 # first extract reference features then use them in self-attention for the target
                 self.change_ipadapter_scale(1.0)
@@ -476,7 +468,7 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
                     timestep_cond=timestep_cond,
                     added_cond_kwargs=added_cond_kwargs_ref,
                     return_dict=False,
-                    cross_attention_kwargs={'shared_attn': shared_attn,  'num': self.num, 'mode': 'w',  'ref_dict': ref_dict, 'scale':0.},
+                    cross_attention_kwargs={'shared_attn': shared_attn,  'num': self.num, 'mode': 'w', 'ref_dict': ref_dict, 'scale': 0.},
                 )[0]
                 self.change_ipadapter_scale(ip_adapter_scale)
                 noise_pred = self.unet(
@@ -509,7 +501,7 @@ class SDXLCustomPipeline(diffusers.StableDiffusionXLPipeline):
                         latents = latents.to(latents_dtype)
 
                 # call the callback, if provided
-                if i == len(timesteps) - 1 or ( (i + 1) % self.scheduler.order == 0):
+                if i == len(timesteps) - 1 or ((i + 1) % self.scheduler.order == 0):
                     progress_bar.update()
 
                 if XLA_AVAILABLE:

@@ -1,3 +1,4 @@
+# modified from https://github.com/google/prompt-to-prompt/blob/main/prompt-to-prompt_stable.ipynb
 from typing import Optional
 
 import torch
@@ -9,11 +10,12 @@ from einops import rearrange
 axes_dims_rope = (16, 56, 56)
 pos_embed = FluxPosEmbed(theta=10000, axes_dim=axes_dims_rope)
 
+
 def otsu(mask_in):
     # normalize
     mask_norm = (mask_in - mask_in.min(-1, keepdim=True)[0]) / \
        (mask_in.max(-1, keepdim=True)[0] - mask_in.min(-1, keepdim=True)[0])
-    
+
     N = 10
     bs = mask_in.shape[0]
     h = mask_in.shape[1]
@@ -29,17 +31,17 @@ def otsu(mask_in):
             high_num = high.shape[0]/h
             low_mean = low.mean()
             high_mean = high.mean()
-        
+
             g = low_num*high_num*((low_mean-high_mean)**2)
             if g > max_g:
                 max_g = g
                 threshold_t = t/N
-            
+
         mask_i[mask_i < threshold_t] = 0
         mask_i[mask_i > threshold_t] = 1
         mask.append(mask_i)
     mask_out = torch.stack(mask, dim=0)
-            
+
     return mask_out
 
 
@@ -58,8 +60,8 @@ class AttentionStore:
 
     @staticmethod
     def get_empty_store():
-        return {"mixed": [], "single": [],}
-    
+        return {"mixed": [], "single": [], }
+
     def __call__(self, q, k, v, is_cross, place_in_unet, num_heads, scale):
         self.forward(q, k, v, is_cross, place_in_unet, num_heads, scale)
         self.cur_att_layer += 1
@@ -79,7 +81,7 @@ class AttentionStore:
         self.attention_maps = []
         for i in range(batch):
             attention_map = attention_maps.mean(0)[i].unsqueeze(0)
-            attention_map = otsu((attention_map[:, :, self.token_indices[i][0]: self.token_indices[i][1]]).sum(-1)) # > 0.65*attention_map[:, :, self.ref_token_idx].max()
+            attention_map = otsu((attention_map[:, :, self.token_indices[i][0]: self.token_indices[i][1]]).sum(-1))
             self.attention_maps.append(attention_map)
         self.attention_maps = torch.stack(self.attention_maps)
 
@@ -98,13 +100,13 @@ class AttentionStore:
                     self.attention_store[key][i] += self.step_store[key][i]
         self.show_cross_attention(res=self.WIDTH // 16, from_where=['mixed', 'single'])
         self.step_store = self.get_empty_store()
-        ## After each step update the self.attention_mask used in the shared attention processor
+        # After each step update the self.attention_mask used in the shared attention processor
         hw = (self.WIDTH // 16) * (self.WIDTH // 16)
         kernel_tensor = torch.ones((1, 1, 3, 3), dtype=self.attention_maps.dtype, device=self.attention_maps.device)
         self.attention_mask = torch.clamp(torch.nn.functional.conv2d(self.attention_maps.to(self.attention_maps.dtype).reshape(-1, 1, self.WIDTH // 16, self.WIDTH // 16), kernel_tensor, padding='same'), 0, 1)
         NUM = self.attention_mask.shape[0]
         self.attention_mask = torch.cat([rearrange(self.attention_mask, "(b n) c h w -> b 1 n c h w", n=NUM)] +
-                                    [torch.roll(rearrange(self.attention_mask, "(b n) c h w -> b 1 n c h w", n=NUM), shifts=i, dims=2) for i in range(1,NUM)], dim=1)
+                                        [torch.roll(rearrange(self.attention_mask, "(b n) c h w -> b 1 n c h w", n=NUM), shifts=i, dims=2) for i in range(1, NUM)], dim=1)
         self.attention_mask = rearrange(
             self.attention_mask, "b n1 n c h w-> (b n) (n1 h w) c"
         )
@@ -124,9 +126,7 @@ class AttentionStore:
 
     def forward(self, q, k, v, is_cross, place_in_transformer, num_heads, scale):
         if is_cross:
-            sim = (
-                torch.einsum("b i d, b j d -> b i j", q[:, :512], k) * scale
-            ) 
+            sim = (torch.einsum("b i d, b j d -> b i j", q[:, :512], k) * scale)
             sim = sim[:, :512, 512:].permute(0, 2, 1).softmax(dim=-1)
             key = f"{place_in_transformer}"
             self.step_store[key].append(rearrange(sim, "(b h) n d -> b h n d", h=num_heads).mean(1))
@@ -161,25 +161,24 @@ class SharedAttnProc(torch.nn.Module):
         editor=None,
     ):
         batch_size, _, _ = hidden_states.shape if encoder_hidden_states is None else encoder_hidden_states.shape
-        txt_seq = 512 # number of tokens for the text prompt
+        txt_seq = 512  # number of tokens for the text prompt
         end_of_hidden_states = hidden_states.shape[1]
         if self.selfattn:
             if not self.single_transformer:
-                hidden_states = torch.cat([hidden_states]+ 
-                                          [rearrange(torch.roll(rearrange(hidden_states, "(b n) hw c -> b n hw c", n=self.NUM), shifts=i, dims=1), "b n hw c -> (b n) hw c") for i in range(1,self.NUM)], dim=1)
-            
+                hidden_states = torch.cat([hidden_states] +
+                                          [rearrange(torch.roll(rearrange(hidden_states, "(b n) hw c -> b n hw c", n=self.NUM), shifts=i, dims=1), "b n hw c -> (b n) hw c") for i in range(1, self.NUM)], dim=1)
+
             else:
-                hidden_states = torch.cat([hidden_states]+ 
-                                          [rearrange(torch.roll(rearrange(hidden_states[:, txt_seq:], "(b n) hw c -> b n hw c", n=self.NUM), shifts=i, dims=1), "b n hw c -> (b n) hw c") for i in range(1,self.NUM)], dim=1)
-            
-                
+                hidden_states = torch.cat([hidden_states] +
+                                          [rearrange(torch.roll(rearrange(hidden_states[:, txt_seq:], "(b n) hw c -> b n hw c", n=self.NUM), shifts=i, dims=1), "b n hw c -> (b n) hw c") for i in range(1, self.NUM)], dim=1)
+
             query = attn.to_q(hidden_states[:, :end_of_hidden_states])
             key = attn.to_k(hidden_states)
             value = attn.to_v(hidden_states)
-    
+
             inner_dim = key.shape[-1]
             head_dim = inner_dim // attn.heads
-    
+
             query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
             key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
             value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
@@ -188,14 +187,14 @@ class SharedAttnProc(torch.nn.Module):
                 query = attn.norm_q(query)
             if attn.norm_k is not None:
                 key = attn.norm_k(key)
-    
+
             # the attention in FluxSingleTransformerBlock does not use `encoder_hidden_states`
             if encoder_hidden_states is not None:
                 # `context` projections.
                 encoder_hidden_states_query_proj = attn.add_q_proj(encoder_hidden_states)
                 encoder_hidden_states_key_proj = attn.add_k_proj(encoder_hidden_states)
                 encoder_hidden_states_value_proj = attn.add_v_proj(encoder_hidden_states)
-    
+
                 encoder_hidden_states_query_proj = encoder_hidden_states_query_proj.view(
                     batch_size, -1, attn.heads, head_dim
                 ).transpose(1, 2)
@@ -205,7 +204,7 @@ class SharedAttnProc(torch.nn.Module):
                 encoder_hidden_states_value_proj = encoder_hidden_states_value_proj.view(
                     batch_size, -1, attn.heads, head_dim
                 ).transpose(1, 2)
-    
+
                 if attn.norm_added_q is not None:
                     encoder_hidden_states_query_proj = attn.norm_added_q(encoder_hidden_states_query_proj)
                 if attn.norm_added_k is not None:
@@ -217,16 +216,14 @@ class SharedAttnProc(torch.nn.Module):
             if image_rotary_emb is not None:
                 ids = torch.cat((txt_ids, img_ids_concat), dim=0)
                 image_rotary_emb_global = pos_embed(ids)
-        
+
                 query = apply_rotary_emb(query, image_rotary_emb)
                 key = apply_rotary_emb(key, image_rotary_emb_global)
 
-
             if editor is not None:
-                _ = editor(rearrange(query, "b nh ... -> (b nh) ..."), 
-                           rearrange(key, "b nh ... -> (b nh) ...")[:, :end_of_hidden_states + (encoder_hidden_states.shape[1] if encoder_hidden_states is not None else 0)], 
+                _ = editor(rearrange(query, "b nh ... -> (b nh) ..."),
+                           rearrange(key, "b nh ... -> (b nh) ...")[:, :end_of_hidden_states + (encoder_hidden_states.shape[1] if encoder_hidden_states is not None else 0)],
                            rearrange(value, "b nh ... -> (b nh) ...")[:, :end_of_hidden_states + (encoder_hidden_states.shape[1] if encoder_hidden_states is not None else 0)], True, "single" if self.single_transformer else "mixed", attn.heads, scale=attn.scale)
-
 
             hidden_states = F.scaled_dot_product_attention(
                 query,
@@ -240,13 +237,13 @@ class SharedAttnProc(torch.nn.Module):
             hidden_states = hidden_states.transpose(1, 2).reshape(
                 batch_size, -1, attn.heads * head_dim
             )
-            
+
             if encoder_hidden_states is not None:
                 encoder_hidden_states, hidden_states = (
                     hidden_states[:, : encoder_hidden_states.shape[1]],
-                    hidden_states[:, encoder_hidden_states.shape[1] : encoder_hidden_states.shape[1] + end_of_hidden_states],
+                    hidden_states[:, encoder_hidden_states.shape[1]: encoder_hidden_states.shape[1] + end_of_hidden_states],
                 )
-    
+
                 # linear proj
                 hidden_states = attn.to_out[0](hidden_states)
                 # dropout
@@ -257,9 +254,8 @@ class SharedAttnProc(torch.nn.Module):
                 return hidden_states[:, :end_of_hidden_states]
         else:
             return self.attn_op(attn,
-                        hidden_states,
-                        encoder_hidden_states=encoder_hidden_states,
-                        attention_mask=attention_mask,
-                        image_rotary_emb=image_rotary_emb,
-                        )
-
+                                hidden_states,
+                                encoder_hidden_states=encoder_hidden_states,
+                                attention_mask=attention_mask,
+                                image_rotary_emb=image_rotary_emb,
+                                )

@@ -35,7 +35,7 @@ deepspeed_config = {
     "bf16": {
         "enabled": True
     },
-    "train_micro_batch_size_per_gpu":1, 
+    "train_micro_batch_size_per_gpu": 1,
     "zero_optimization": {
         "stage": 3,  # Enable Stage 2 ZeRO (Optimizer/Gradient state partitioning)
         "overlap_comm": True,
@@ -150,7 +150,7 @@ class ImageLogger(Callback):
     @rank_zero_only
     def log_img(self, pl_module, batch, batch_idx, split="train"):
         check_idx = batch_idx if self.log_on_batch_idx else pl_module.global_step
-        if (hasattr(pl_module, "log_images") and callable(pl_module.log_images) and self.max_images > 0) and (split=='val' or self.check_frequency(check_idx)):
+        if (hasattr(pl_module, "log_images") and callable(pl_module.log_images) and self.max_images > 0) and (split == 'val' or self.check_frequency(check_idx)):
             is_train = pl_module.training
             if is_train:
                 pl_module.eval()
@@ -183,7 +183,7 @@ class ImageLogger(Callback):
                 grid = (grid * 255).astype(np.uint8)
                 img = Image.fromarray(grid)
                 img.save(path)
-            
+
                 if pl_module is not None and isinstance(pl_module.logger, WandbLogger):
                     pl_module.logger.log_image(key=f"{split}/{k}", images=[img,], step=pl_module.global_step,)
 
@@ -289,7 +289,7 @@ if __name__ == "__main__":
         _tmp = logdir.split("/")
         nowname = _tmp[-1]
     else:
-        nowname =now + ("_" + opt.name if opt.name else "")
+        nowname = now + ("_" + opt.name if opt.name else "")
         logdir = os.path.join(opt.logdir, nowname)
         print(f"LOGDIR: {logdir}")
 
@@ -422,7 +422,7 @@ if __name__ == "__main__":
         signal.signal(signal.SIGUSR1, melk)
 
         # run
-        print(f"starting train")
+        print("starting train")
         try:
             trainer.fit(model, data)
         except Exception:

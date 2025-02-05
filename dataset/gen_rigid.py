@@ -39,6 +39,7 @@ def setup_for_distributed(is_master):
 
     __builtin__.print = print
 
+
 def init_distributed_mode(args):
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         args.rank = int(os.environ["RANK"])
@@ -81,11 +82,11 @@ def init_distributed_mode(args):
 
 
 def run_dataset_gen(categories, outdir='./', inference_step=50, rootdir='./', guidance_scale=10., warp_thresh=0.8, negative_prompt=None, warping=True, seed=42, rank=0, device='cuda', promptpath=None,):
-    
+
     pipe = FluxControlCustomPipeline.from_pretrained("black-forest-labs/FLUX.1-Depth-dev", num=NUM, torch_dtype=torch_dtype).to("cuda")
     pipe.vae.enable_tiling()
     pipe.vae.enable_slicing()
-    
+
     seed_everything(seed)
 
     dataset = ObjaverseDataset(categories, rootdir, promptpath, warping=warping, img_size=WIDTH)
@@ -99,7 +100,7 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, rootdir='./', gu
     )
     loader = DataLoader(
         dataset,
-        batch_size=1, # important!
+        batch_size=1,  # important!
         shuffle=False,
         sampler=sampler,
         num_workers=3,
@@ -135,31 +136,31 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, rootdir='./', gu
 
         hw = (WIDTH // 16) * (WIDTH // 16)
         kernel_tensor = torch.ones((1, 1, 9, 9)).to(device).to(torch_dtype)
-        attn_mask = F.interpolate(  (mask_images.unsqueeze(1) > 0)*1., (WIDTH // 16, WIDTH // 16), mode='area').to(device).to(torch_dtype)
+        attn_mask = F.interpolate((mask_images.unsqueeze(1) > 0)*1., (WIDTH // 16, WIDTH // 16), mode='area').to(device).to(torch_dtype)
         attn_mask = (torch.clamp(torch.nn.functional.conv2d(attn_mask, kernel_tensor, padding='same'), 0, 1) > 0)*1.
 
-        attn_mask = torch.cat([rearrange(attn_mask, "(b n) c h w -> b 1 n c h w", n=NUM)] + 
-                                [torch.roll(rearrange(attn_mask, "(b n) c h w -> b 1 n c h w", n=NUM), shifts=i, dims=2) for i in range(1,NUM)], dim=1)
+        attn_mask = torch.cat([rearrange(attn_mask, "(b n) c h w -> b 1 n c h w", n=NUM)] +
+                              [torch.roll(rearrange(attn_mask, "(b n) c h w -> b 1 n c h w", n=NUM), shifts=i, dims=2) for i in range(1, NUM)], dim=1)
         attn_mask = rearrange(
             attn_mask, "b n1 n c h w-> (b n) (n1 h w) c"
         )
         attn_mask = torch.cat([torch.ones_like(attn_mask[:, :text_seq, :]), attn_mask], 1)
         attn_mask = torch.einsum("b i d, b j d -> b i j", torch.ones_like(attn_mask[:, :text_seq + hw]), attn_mask)
-        attn_mask[:, :text_seq + hw, :text_seq + hw]=1
-        attn_mask[:, :text_seq, text_seq + hw:]=0
+        attn_mask[:, :text_seq + hw, :text_seq + hw] = 1
+        attn_mask[:, :text_seq, text_seq + hw:] = 0
         attn_mask = attn_mask.masked_fill(attn_mask == 0, -65504.0)
         attn_mask = rearrange(attn_mask.unsqueeze(0).expand(24, -1, -1, -1), "nh b ... -> b nh ...")
 
         model_output = pipe(
-            prompt=[f'{x} a natural image with the object on the ground.' for x in prompts[:NUM]], 
+            prompt=[f'{x} a natural image with the object on the ground.' for x in prompts[:NUM]],
             control_image=depth_images,
             width=WIDTH,
             height=HEIGHT,
-            num_inference_steps=inference_step, 
+            num_inference_steps=inference_step,
             joint_attention_kwargs={'attention_mask': attn_mask},
             guidance_scale=guidance_scale,
             generator=torch.Generator().manual_seed(seed),
-            correspondence=correspondence, 
+            correspondence=correspondence,
             counter_cc=counter_cc,
             warp_thresh=warp_thresh,
             negative_prompt=negative_prompt,
@@ -167,13 +168,13 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, rootdir='./', gu
         torch.cuda.empty_cache()
         attn_mask = None
 
-        for num_pairs in range(len(model_output) // NUM ):
+        for num_pairs in range(len(model_output) // NUM):
             for numref_ in range(NUM):
                 im_ = Image.fromarray(((torch.clip(model_output[(NUM)*num_pairs + numref_].permute(1, 2, 0) * 0.5 + 0.5, 0., 1.0)).float().cpu().numpy() * 255).astype(np.uint8))
                 im_.save(f"{outdir}/{num_sample}_{rank}_{numref_}.jpg")
                 im_ = Image.fromarray(((torch.clip(images[(NUM)*num_pairs + numref_].permute(1, 2, 0) * 0.5 + 0.5, 0., 1.0)).float().cpu().numpy() * 255).astype(np.uint8))
                 im_.save(f"{outdir}/masks/{num_sample}_{rank}_{numref_}.jpg")
-                
+
             metadata.append({
                 'filenames': [f"{outdir}/{num_sample}_{rank}_{numref_}.jpg" for numref_ in range(NUM)],
                 'prompts': prompts,
@@ -186,10 +187,10 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, rootdir='./', gu
         if num_sample % 50 == 0:
             with open(f'{outdir}/metadata_{rank}.json', 'w') as f:
                 json.dump(metadata, f)
-    
+
     with open(f'{outdir}/metadata_{rank}.json', 'w') as f:
         json.dump(metadata, f)
-                        
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run a sampling scripts for the dreammatcher')
@@ -217,7 +218,7 @@ def main(args):
     print(f"Starting rank={rank}, seed={seed}, world_size={dist.get_world_size()}.")
     os.makedirs(args.outdir, exist_ok=True)
     os.makedirs(f'{args.outdir}/masks', exist_ok=True)
-    categories =  list(torch.load('assets/objaverse_ids.pt'))
+    categories = list(torch.load('assets/objaverse_ids.pt'))
     categories.sort()
     categories = list(set(categories).intersection(set([str(Path(x).stem) for x in glob.glob(f'{args.rootdir}/objaverse_rendering/*.zip')])))
 

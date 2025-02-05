@@ -1,7 +1,6 @@
 
 import argparse
 import os
-import sys
 from os.path import expanduser
 from pathlib import Path
 from urllib.request import urlretrieve
@@ -14,10 +13,12 @@ from PIL import Image
 from torchvision import transforms
 from torchvision.transforms import CenterCrop, Normalize, Resize, ToTensor
 
-sys.path.append('../method')
+sys.path.append('./')
 from data.data import CustomLoader
 
 NUM = 3
+
+
 def get_aesthetic_model(clip_model="vit_l_14"):
     """load the aethetic model"""
     home = expanduser("~")
@@ -40,15 +41,15 @@ def get_aesthetic_model(clip_model="vit_l_14"):
     m.eval()
     return m
 
-def calc_scores(DIRS, batch_size, mode='rigid', rank=0):
-    torch.cuda.set_device(rank)
+
+def calc_scores(DIRS, batch_size, mode='rigid'):
     device = 'cuda'
 
     model = get_aesthetic_model()
     model = model.to(device)
     clip_model, preprocess = clip.load("ViT-L/14", device=device)
     model_dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14_reg').eval().to(device)
-    
+
     preprocess = transforms.Compose([
             Resize(224, interpolation=Image.BICUBIC),
             CenterCrop(224),
@@ -81,19 +82,19 @@ def calc_scores(DIRS, batch_size, mode='rigid', rank=0):
                 emb = clip_model.encode_image(batch['images'].to(device)).float()
                 emb /= emb.norm(dim=-1, keepdim=True)
                 scores = model(emb)
-            
+
             with torch.no_grad():
                 image_embs = model_dino(batch_dino['images'].to(device))
                 image_embs = image_embs / torch.norm(image_embs, dim=-1, keepdim=True)
                 image_embs = rearrange(image_embs, "(b n) ...-> b n ...", b=batch_size)
-                scores_dino = torch.einsum("bni,bim->bnm", image_embs, image_embs.permute(0,2,1))
+                scores_dino = torch.einsum("bni,bim->bnm", image_embs, image_embs.permute(0, 2, 1))
 
             for k in range(scores.shape[0]):
                 aesthetics_scores[str(Path(batch['filenames'][k]).stem)] = scores[k][0].item()
-            
+
             for k in range(scores_dino.shape[0]):
                 score = torch.triu(scores_dino[k], diagonal=1)
-                key = '+'.join([Path(x).stem for x in batch_dino['filenames']]) 
+                key = '+'.join([Path(x).stem for x in batch_dino['filenames']])
                 dino_scores[key] = score.cpu().numpy()
 
         torch.save(aesthetics_scores, f'{outdir}/{path}_aesthetics.pt')
@@ -107,7 +108,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--mode", type=str, default='deformable')
     parser.add_argument("--folder", type=str, required=True)
-    
+
     args = parser.parse_args()
     return args
 
@@ -123,7 +124,4 @@ if __name__ == "__main__":
             print(DIR)
             calc_scores([DIR],
                         args.batch_size,
-                        args.mode,
-                        0
-                )
-        
+                        args.mode)

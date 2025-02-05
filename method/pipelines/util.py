@@ -1,12 +1,13 @@
 import importlib
+import textwrap
+
+import numpy as np
 import torch
 from PIL import Image, ImageDraw, ImageFont
-import textwrap
-import numpy as np
 
 
 def instantiate_from_config(config):
-    if not "target" in config:
+    if not ("target" in config):
         if config == "__is_first_stage__":
             return None
         elif config == "__is_unconditional__":
@@ -23,7 +24,6 @@ def get_obj_from_str(string, reload=False, invalidate_cache=True):
         module_imp = importlib.import_module(module)
         importlib.reload(module_imp)
     return getattr(importlib.import_module(module, package=None), cls)
-
 
 
 def isheatmap(x):
@@ -62,6 +62,7 @@ def log_txt_as_img(wh, xc, size=10):
     txts = np.stack(txts)
     txts = torch.tensor(txts)
     return txts
+
 
 def append_dims(x, target_dims):
     """Appends dimensions to the end of a tensor until it has target_dims dimensions."""

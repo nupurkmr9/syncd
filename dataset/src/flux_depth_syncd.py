@@ -27,15 +27,15 @@ else:
 from .flux_syncd import calculate_shift, retrieve_timesteps
 
 
-def warpcorrespondence(correspondence, counter_cc, feats, num_heads, timestep, numref = 3):
+def warpcorrespondence(correspondence, counter_cc, feats, num_heads, timestep, numref=3):
     warp_first_second = True
     res = int(math.sqrt(feats.shape[1]))
     dtype = feats.dtype
     orig_res = 128
 
     kernel_tensor = torch.ones((1, 1, 3, 3)).to(feats.device).to(dtype)/(3*3)
-    feats = rearrange(feats, "b (h w) c -> b c h w ", h=res, w=res, b=feats.shape[0], c=feats.shape[-1] )
-    feats = torch.nn.functional.interpolate(feats, (orig_res, orig_res))#, mode='bicubic', antialias=True).float()
+    feats = rearrange(feats, "b (h w) c -> b c h w ", h=res, w=res, b=feats.shape[0], c=feats.shape[-1])
+    feats = torch.nn.functional.interpolate(feats, (orig_res, orig_res))
     mask = torch.zeros((feats.shape[0], 1, orig_res, orig_res), device=feats.device, dtype=feats.dtype)
     feats_copy = torch.zeros_like(feats)
 
@@ -44,40 +44,38 @@ def warpcorrespondence(correspondence, counter_cc, feats, num_heads, timestep, n
 
     for j in range(numref-1):
         corresp = correspondence[prev_counter:prev_counter+counter_cc[counter_]].clone().to(feats.dtype)
-        temp2 = torch.nan_to_num(torch.nn.functional.grid_sample(feats[-num_heads:], -1.*corresp[:, [3,2]].unsqueeze(0).unsqueeze(2).expand(num_heads, -1, -1, -1), align_corners=False, mode='bicubic' ))
-        corresp_orig = (orig_res*(0.5 - corresp.clone()*0.5)).floor().long() 
+        temp2 = torch.nan_to_num(torch.nn.functional.grid_sample(feats[-num_heads:], -1.*corresp[:, [3, 2]].unsqueeze(0).unsqueeze(2).expand(num_heads, -1, -1, -1), align_corners=False, mode='bicubic'))
+        corresp_orig = (orig_res*(0.5 - corresp.clone()*0.5)).floor().long()
         if corresp_orig.min() < 0 or corresp_orig.max() >= orig_res:
             return None
-        
-        feats_copy[j*num_heads:(j+1)*num_heads, :, corresp_orig[:,0], corresp_orig[:,1]] = temp2.squeeze(3)
-        mask[j*num_heads:(j+1)*num_heads, :, corresp_orig[:,0], corresp_orig[:,1]] = 1.
+
+        feats_copy[j*num_heads:(j+1)*num_heads, :, corresp_orig[:, 0], corresp_orig[:, 1]] = temp2.squeeze(3)
+        mask[j*num_heads:(j+1)*num_heads, :, corresp_orig[:, 0], corresp_orig[:, 1]] = 1.
 
         prev_counter += counter_cc[counter_]
-        counter_ +=1
+        counter_ += 1
 
     if timestep < 0.9:
         # convolve the mask with a kernel to erode it a bit
         mask = (torch.clamp(torch.nn.functional.conv2d(mask, kernel_tensor, padding='same'), 0, 1) >= 0.9).to(feats.dtype)
     feats = mask * feats_copy + (1-mask)*feats
-    
+
     if warp_first_second:
         mask_copy = torch.zeros((feats.shape[0], 1, orig_res, orig_res), device=feats.device, dtype=feats.dtype)
         corresp = correspondence[0:counter_cc[0]].clone().to(feats.dtype)
-        temp2 = torch.nan_to_num(torch.nn.functional.grid_sample(feats[num_heads:2*num_heads], -1.*corresp[:, [3,2]].unsqueeze(0).unsqueeze(2).expand(num_heads, -1, -1, -1), align_corners=False, mode='bicubic' ))
-        corresp_orig = (orig_res*(0.5 - corresp.clone()*0.5)).floor().long()  
+        temp2 = torch.nan_to_num(torch.nn.functional.grid_sample(feats[num_heads:2*num_heads], -1.*corresp[:, [3, 2]].unsqueeze(0).unsqueeze(2).expand(num_heads, -1, -1, -1), align_corners=False, mode='bicubic'))
+        corresp_orig = (orig_res*(0.5 - corresp.clone()*0.5)).floor().long()
         if corresp_orig.min() < 0 or corresp_orig.max() >= orig_res:
             return None
 
-        feats_copy[:num_heads, :, corresp_orig[:,0], corresp_orig[:,1]] = temp2.squeeze(3)
-        mask_copy[:num_heads, :, corresp_orig[:,0], corresp_orig[:,1]] = 1. * (1- mask[:num_heads, :, corresp_orig[:,0], corresp_orig[:,1]])
+        feats_copy[:num_heads, :, corresp_orig[:, 0], corresp_orig[:, 1]] = temp2.squeeze(3)
+        mask_copy[:num_heads, :, corresp_orig[:, 0], corresp_orig[:, 1]] = 1. * (1 - mask[:num_heads, :, corresp_orig[:, 0], corresp_orig[:, 1]])
         if timestep < 0.9:
             # convolve the mask with a kernel to erode it a bit
             mask_copy = (torch.clamp(torch.nn.functional.conv2d(mask_copy, kernel_tensor, padding='same'), 0, 1) >= 0.9)*1.
-        feats[:num_heads] = mask_copy[:num_heads] * feats_copy[:num_heads] + (1-mask_copy[:num_heads])*feats[:num_heads]
-
-
-    feats = torch.nn.functional.interpolate( feats, (res,res), mode='nearest') # check with nearest also and mask.
-    feats = rearrange(feats, "b c h w -> b (h w) c", h=res, w=res, b=feats.shape[0] )
+        feats[:num_heads] = mask_copy[:num_heads] * feats_copy[:num_heads] + (1 - mask_copy[:num_heads])*feats[:num_heads]
+    feats = torch.nn.functional.interpolate(feats, (res, res), mode='nearest')
+    feats = rearrange(feats, "b c h w -> b (h w) c", h=res, w=res, b=feats.shape[0])
     del temp2
     return feats.to(dtype)
 
@@ -104,7 +102,7 @@ class FluxControlCustomPipeline(FluxControlPipeline):
             scheduler=scheduler,
         )
         self.num = num
-    
+
     def prepare_latents(
         self,
         batch_size,
@@ -163,7 +161,7 @@ class FluxControlCustomPipeline(FluxControlPipeline):
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
         max_sequence_length: int = 512,
         ###
-        correspondence=None, 
+        correspondence=None,
         counter_cc=None,
         warp_thresh=0.9,
         negative_prompt=None,
@@ -188,7 +186,7 @@ class FluxControlCustomPipeline(FluxControlPipeline):
         self._guidance_scale = guidance_scale
         self._joint_attention_kwargs = joint_attention_kwargs
         self._interrupt = False
-        
+
         ##########################
         nowarping = False
         ##########################
@@ -221,7 +219,7 @@ class FluxControlCustomPipeline(FluxControlPipeline):
             max_sequence_length=max_sequence_length,
             lora_scale=lora_scale,
         )
-        
+
         neg_prompt_embeds = None
         neg_pooled_prompt_embeds = None
         neg_text_ids = None
@@ -280,7 +278,6 @@ class FluxControlCustomPipeline(FluxControlPipeline):
         )
         self.joint_attention_kwargs.update({"txt_ids": text_ids, "img_ids_concat": latent_image_ids_concat})
 
-
         # 5. Prepare timesteps
         sigmas = np.linspace(1.0, 1 / num_inference_steps, num_inference_steps) if sigmas is None else sigmas
         image_seq_len = latents.shape[1]
@@ -313,13 +310,13 @@ class FluxControlCustomPipeline(FluxControlPipeline):
             for i, t in enumerate(timesteps):
                 if self.interrupt:
                     continue
-                
-                 # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
+
+                # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
                 timestep = t.expand(latents.shape[0]).to(latents.dtype)
 
                 if correspondence is not None and timestep[0]/1000 > warp_thresh and not nowarping:
                     # print(latents.shape, timestep[0]/1000)
-                    latents1 = warpcorrespondence(correspondence, counter_cc, latents, 1,  timestep[0]/1000, numref = self.num)
+                    latents1 = warpcorrespondence(correspondence, counter_cc, latents, 1,  timestep[0]/1000, numref=self.num)
                     if latents1 is None:
                         nowarping = True
                     else:
@@ -340,7 +337,7 @@ class FluxControlCustomPipeline(FluxControlPipeline):
                     return_dict=False,
                 )[0]
 
-                if negative_prompt is not None and i >=1:
+                if negative_prompt is not None and i >= 1:
                     noise_pred_neg = self.transformer(
                         hidden_states=latent_model_input,
                         timestep=timestep / 1000,

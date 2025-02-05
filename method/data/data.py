@@ -3,19 +3,16 @@ import json
 import os
 import random
 from collections import defaultdict
-from functools import partial
 from pathlib import Path
 
 import lightning as L
 import numpy as np
-import pandas as pd
 import torch
 from data.utils_ import crop_by_mask, square_crop_shortest_side, square_crop_with_mask
 from PIL import Image, ImageFile, ImageFilter, ImageOps
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
-# change this to get from os.env and set it before running the code. 
 Image.MAX_IMAGE_PIXELS = None
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -99,8 +96,6 @@ class SynCDDataset(Dataset):
 
     def __getitem__(self, index):
         batch = self.getdata(index)
-
-
         drop_both = False
         drop_im = False
         drop_txt = False
@@ -110,7 +105,7 @@ class SynCDDataset(Dataset):
             drop_im = chance >= self.drop_both and chance < self.drop_both + self.drop_im
             drop_txt = chance >= self.drop_both + self.drop_im and chance < self.drop_both + self.drop_im + self.drop_txt
 
-        batch["prompts"] = ["" for _ in range(len(batch["prompts"])) ] if (drop_txt or drop_both) else batch["prompts"]
+        batch["prompts"] = ["" for _ in range(len(batch["prompts"]))] if (drop_txt or drop_both) else batch["prompts"]
         batch["masks"] = torch.ones_like(batch["masks"]) if np.random.uniform(0, 1) < self.drop_mask else batch["masks"]
         batch["ref_images"] = torch.zeros_like(batch["ref_images"]) if (drop_im or drop_both) else batch["ref_images"]
         batch["drop_im"] = torch.Tensor([drop_im*1.])
@@ -123,7 +118,7 @@ class SynCDDataset(Dataset):
             return None
 
         keys = list(batch[0].keys())
-        collate_batch = {x:[] for x in keys}
+        collate_batch = {x: [] for x in keys}
 
         keys_as_list = ['prompts', 'filenames', 'name']
         for batch_obj in batch:
@@ -134,7 +129,7 @@ class SynCDDataset(Dataset):
                 collate_batch[key] = [item for sublist in collate_batch[key] for item in sublist]
             else:
                 collate_batch[key] = torch.cat(collate_batch[key], dim=0)
-        
+
         return collate_batch
 
     def setup_metadata(self,):
@@ -160,8 +155,8 @@ class SynCDDataset(Dataset):
                         if self.filter_dino > 0 and self.filter_aesthetics > 0:
                             dino_score = dino_scores['+'.join([Path(x).stem for x in item['filenames']])]
                             valid_clique = [aesthetics_scores[Path(x).stem] >= self.filter_aesthetics for x in item['filenames']]
-                            valid_indices = [list(set(x).union(set(y))) for (x,y) in [( (dino_score >= self.filter_dino) * (dino_score <= 0.98)).nonzero()]][0]
-                            valid_clique = [ x * (i in valid_indices) for i,x in enumerate(valid_clique)]
+                            valid_indices = [list(set(x).union(set(y))) for (x, y) in [((dino_score >= self.filter_dino) * (dino_score <= 0.98)).nonzero()]][0]
+                            valid_clique = [x * (i in valid_indices) for i, x in enumerate(valid_clique)]
 
                         if np.sum(valid_clique) > 1:
                             self.metadata.append(counter)
@@ -177,18 +172,18 @@ class SynCDDataset(Dataset):
 
     def getdata(self, index):
         index = index % len(self.metadata)
-        batch = {'images':[], 
-                 'ref_images':[], 
+        batch = {'images': [],
+                 'ref_images': [],
                  'prompts': [],
                  'filenames': [],
                  'masks': [],
-                 'original_size_as_tuple':[]
-                }
+                 'original_size_as_tuple': []
+                 }
 
-        fn = lambda x : 255 if x > 0 else 0
-    
+        fn = lambda x: 255 if x > 0 else 0
+
         num_images = len(self.images[self.metadata[index]])
-        
+
         if self.numref == -1:
             indices_selected = list(np.arange(num_images))
         elif num_images >= self.numref:
@@ -198,9 +193,9 @@ class SynCDDataset(Dataset):
             # insufficient images, resample some indices with horizontal flip
             values = list(np.arange(0, num_images)) + list(-1*np.arange(1, num_images+1))
             indices_selected = list(np.random.choice(values, self.numref, replace=False))
-    
-        global_ref_index = [indices_selected.index(np.random.choice([num for num in indices_selected if num not in [x, -(x+1), -x-1]])) for x in indices_selected][:1]  + np.arange(1, len(indices_selected)).tolist()
-        
+
+        global_ref_index = [indices_selected.index(np.random.choice([num for num in indices_selected if num not in [x, -(x+1), -x-1]])) for x in indices_selected][:1] + np.arange(1, len(indices_selected)).tolist()
+
         for i in indices_selected:
             if i < 0:
                 i = -1*i - 1
@@ -211,7 +206,7 @@ class SynCDDataset(Dataset):
             image = Image.open(filename).convert('RGB')
             parentfolder = str(Path(filename).parent)
             imagestem = str(Path(filename).stem)
-            mask = ImageOps.grayscale(Image.open(f'{parentfolder}/masks/{imagestem}.jpg' )).convert('L').point(fn, mode='1').resize(image.size)
+            mask = ImageOps.grayscale(Image.open(f'{parentfolder}/masks/{imagestem}.jpg')).convert('L').point(fn, mode='1').resize(image.size)
             mask = Image.fromarray((np.array(mask) * 255).astype(np.uint8))
             prompt = self.prompts[self.metadata[index]][i]
 
@@ -220,7 +215,7 @@ class SynCDDataset(Dataset):
                 mask = mask.transpose(Image.FLIP_LEFT_RIGHT)
 
             ref_image, _, _ = square_crop_with_mask(image, mask, random=True)
-            
+
             if self.cropped_image:
                 image, mask2 = crop_by_mask(image, mask)
                 mask2 = mask2.filter(ImageFilter.ModeFilter(size=20))
@@ -229,7 +224,7 @@ class SynCDDataset(Dataset):
             else:
                 image = square_crop_shortest_side(image)
                 mask = square_crop_shortest_side(mask)
-            
+
             orig_h, orig_w = image.size
             image = self.transform(image)[None]
             ref_image = self.transform_refimages(ref_image)[None]
@@ -249,7 +244,7 @@ class SynCDDataset(Dataset):
         batch['masks'] = torch.cat(batch['masks'])
         batch['original_size_as_tuple'] = torch.stack(batch['original_size_as_tuple'])
         batch['crop_coords_top_left'] = torch.zeros_like(batch['original_size_as_tuple'])
-        batch['target_size_as_tuple']= self.img_size*torch.ones_like(batch['original_size_as_tuple'])
+        batch['target_size_as_tuple'] = self.img_size*torch.ones_like(batch['original_size_as_tuple'])
         batch['name'] = [self.metadata[index]]
 
         return batch
@@ -262,21 +257,21 @@ class DummyDataset(SynCDDataset):
         self.prompt = prompt
         self.num_images_per_prompt = num_images_per_prompt
         self.cat = cat
-    
+
     def setup_metadata(self):
         pass
 
     def __len__(self):
         return self.num_images_per_prompt
-    
+
     def getdata(self, index):
-        batch = {'images':[], 
-                 'ref_images':[], 
+        batch = {'images': [],
+                 'ref_images': [],
                  'prompts': [],
                  'filenames': [],
                  'masks': [],
-                 'original_size_as_tuple':[]
-                }
+                 'original_size_as_tuple': []
+                 }
 
         fn = lambda x : 255 if x > 0 else 0
 
@@ -289,12 +284,12 @@ class DummyDataset(SynCDDataset):
             image = Image.open(filename).convert('RGB')
             parentfolder = str(Path(filename).parent)
             imagestem = str(Path(filename).stem)
-            mask = ImageOps.grayscale(Image.open(f'{parentfolder}/masks/{imagestem}.jpg' )).convert('L').point(fn, mode='1').resize(image.size)
+            mask = ImageOps.grayscale(Image.open(f'{parentfolder}/masks/{imagestem}.jpg')).convert('L').point(fn, mode='1').resize(image.size)
             mask = Image.fromarray((np.array(mask) * 255).astype(np.uint8))
 
             image, mask, _ = square_crop_with_mask(image, mask, random=True)
             ref_image = image
-            
+
             orig_h, orig_w = image.size
             image = self.transform(image)[None]
             ref_image = self.transform_refimages(ref_image)[None]
@@ -313,7 +308,7 @@ class DummyDataset(SynCDDataset):
         batch['masks'] = torch.cat(batch['masks'])
         batch['original_size_as_tuple'] = torch.stack(batch['original_size_as_tuple'])
         batch['crop_coords_top_left'] = torch.zeros_like(batch['original_size_as_tuple'])
-        batch['target_size_as_tuple']= self.img_size*torch.ones_like(batch['original_size_as_tuple'])
+        batch['target_size_as_tuple'] = self.img_size*torch.ones_like(batch['original_size_as_tuple'])
         return batch
 
 
@@ -328,11 +323,7 @@ class ConcatDataset(Dataset):
         self.length = 0
         self.split = []
         for i, mode_ in enumerate(mode.split('+')):
-            self.dataset.append(SynCDDataset(rootdir=rootdir[i], 
-                                           mode=mode_,
-                                           **kwargs
-                                          )
-                                )
+            self.dataset.append(SynCDDataset(rootdir=rootdir[i], mode=mode_, **kwargs))
             self.length += len(self.dataset[-1])
             self.split.append(self.length)
 
@@ -342,7 +333,7 @@ class ConcatDataset(Dataset):
     def __getitem__(self, index):
         index = index % self.length
         whichdata = next(x[0] for x in enumerate(self.split) if x[1] > index)
-        return self.dataset[whichdata].__getitem__(index - self.split[whichdata-1] if whichdata > 0 else index) 
+        return self.dataset[whichdata].__getitem__(index - self.split[whichdata-1] if whichdata > 0 else index)
 
 
 class CustomLoader(L.LightningDataModule):

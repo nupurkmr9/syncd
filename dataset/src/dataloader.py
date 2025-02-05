@@ -14,10 +14,10 @@ PHRASES_TO_REMOVE = "worn; low-poly; secluded; rustic; figurine; distinctive; re
 
 
 def cartesian_to_spherical(xyz):
-    xy = xyz[:,0]**2 + xyz[:,2]**2
-    z = np.sqrt(xy + xyz[:,1]**2)
-    theta = np.arctan2(xyz[:,1], np.sqrt(xy)) # for elevation angle defined from Z-axis down
-    azimuth = np.arctan2(xyz[:,2], xyz[:,0])
+    xy = xyz[:, 0]**2 + xyz[:, 2]**2
+    z = np.sqrt(xy + xyz[:, 1]**2)
+    theta = np.arctan2(xyz[:, 1], np.sqrt(xy))  # for elevation angle defined from Z-axis down
+    azimuth = np.arctan2(xyz[:, 2], xyz[:, 0])
     return np.rad2deg(theta), np.rad2deg(azimuth), z
 
 
@@ -37,8 +37,8 @@ def getw2cpy(transforms):
 
     R, T = rotation_matrix, translation_vector
 
-    st = np.array([[-1., 0., 0.],[0., 0., 1.],[0., -1, 0.]])
-    st1 = np.array([[-1., 0., 0.],[0., -1., 0.],[0., 0, 1.]])
+    st = np.array([[-1., 0., 0.], [0., 0., 1.], [0., -1, 0.]])
+    st1 = np.array([[-1., 0., 0.], [0., -1., 0.], [0., 0, 1.]])
 
     R = (st@R@st1.T)
     T = st@T
@@ -59,7 +59,7 @@ def clean_prompt(prompt):
 def get_depth(imagename, scale, shift):
     namestem = Path(imagename).stem
     nameparent = Path(imagename).parent
-    image = scale_shift( f'{nameparent}/{namestem}_depth.png', scale, shift, depth=True)[0]
+    image = scale_shift(f'{nameparent}/{namestem}_depth.png', scale, shift, depth=True)[0]
     if image is None:
         return None
     image = torch.from_numpy(np.array(image)).unsqueeze(0).unsqueeze(1)
@@ -78,15 +78,15 @@ def get_depth(imagename, scale, shift):
 def shift_scale_correspondences(correspondences, scale_factor1, shift_position1, scale_factor2, shift_position2):
     # Initialize new correspondences array
     new_correspondences = torch.zeros_like(correspondences)
-    
+
     # Shift and scale each pair of correspondences
     new_correspondences[:, 0] = scale_factor1 * correspondences[:, 0] + ((1 - 2*(shift_position1[1] / 1024)) - scale_factor1)
     new_correspondences[:, 1] = scale_factor1 * correspondences[:, 1] + ((1 - 2*(shift_position1[0] / 1024)) - scale_factor1)
-    
+
     # Second image coordinates (shifted and scaled)
     new_correspondences[:, 2] = scale_factor2 * correspondences[:, 2] + ((1 - 2*(shift_position2[1] / 1024)) - scale_factor2)
     new_correspondences[:, 3] = scale_factor2 * correspondences[:, 3] + ((1 - 2*(shift_position2[0] / 1024)) - scale_factor2)
-    
+
     return new_correspondences
 
 
@@ -97,7 +97,7 @@ def scale_shift(path, scale=None, shift=None, depth=False):
     if depth:
         original_image = Image.open(path).resize((1024, 1024))
         mask = original_image.convert('L')
-        background_image = Image.new("I", (original_image.width, original_image.height), 65535 )
+        background_image = Image.new("I", (original_image.width, original_image.height), 65535)
     else:
         original_image = Image.open(path).convert('RGBA').resize((1024, 1024))
         mask = (original_image.split()[-1]).convert('L')
@@ -148,8 +148,8 @@ def is_elev_inrange(imagenames, min=0, max=60):
         w2c_pys.append(w2c_py)
 
     w2c_pys = np.stack(w2c_pys)
-        
-    camera_center = torch.einsum('bhw,bwc->bhc', -1*torch.from_numpy(w2c_pys[:, :3, :3]).permute(0,2,1), torch.from_numpy(w2c_pys[:, :3, 3]).reshape(-1, 3, 1))
+
+    camera_center = torch.einsum('bhw,bwc->bhc', -1*torch.from_numpy(w2c_pys[:, :3, :3]).permute(0, 2, 1), torch.from_numpy(w2c_pys[:, :3, 3]).reshape(-1, 3, 1))
     elev, _, _ = cartesian_to_spherical(camera_center)
     if torch.all(elev > min) and torch.all(elev < max):
         return True
@@ -160,7 +160,7 @@ def is_elev_inrange(imagenames, min=0, max=60):
 def get_minimum_k_overlap(corresp, imagenames, k=0):
     if len(corresp) < k:
         return None, None
-    matches = [(x[0].shape[0] + x[1].shape[0] + x[2].shape[0], i) for i,x in enumerate(corresp) if is_elev_inrange(imagenames[i])] # and x.shape[0] < 70000 ]
+    matches = [(x[0].shape[0] + x[1].shape[0] + x[2].shape[0], i) for i, x in enumerate(corresp) if is_elev_inrange(imagenames[i])]
     if len(matches) - 1 < k:
         return None, None
     matches = sorted(matches, key=lambda x: x[0], reverse=False)
@@ -173,7 +173,7 @@ def remove_unreadable_files(corresp, imagenames):
     for i in range(len(imagenames)):
         try:
             json_files = [x.replace('.png', '.json') for x in imagenames[i]]
-            _ =  [json.load(open(x, 'r')) for x in json_files]
+            _ = [json.load(open(x, 'r')) for x in json_files]
             valid_i.append(i)
         except:
             continue
@@ -189,7 +189,7 @@ class ObjaverseDataset(Dataset):
         self.warping = warping
 
         # maximum times the same asset can be used (in pratice it can be less if we didn't get triplets with sufficient correspondence in get_corresp.py)
-        self.repeat_each_id=repeat_each_id 
+        self.repeat_each_id = repeat_each_id
 
         self.transform = transforms.Compose(
                 [
@@ -203,22 +203,22 @@ class ObjaverseDataset(Dataset):
                     transforms.ToTensor(),
                 ]
             )
-    
+
     def _pointlambda_(self, x):
         if x > 0:
             return 255
         else:
             return 0
-    
+
     def __getitem__(self, index):
         try:
-            i = index //  self.repeat_each_id
+            i = index // self.repeat_each_id
             k = index % self.repeat_each_id
 
             uid = self.objects_ids[i].split("/")[-1].split(".glb")[0]
             if self.warping:
                 corresp, imagenames = torch.load(f"{self.rootdir}/correspondence/{uid}.pt", map_location='cpu')
-                
+
                 # make sure imagenames is correctly formatted with parent dir
                 for j in range(len(imagenames)):
                     for m in range(len(imagenames[j])):
@@ -232,7 +232,7 @@ class ObjaverseDataset(Dataset):
                 corresp, imagenames = get_minimum_k_overlap(corresp, imagenames, k=k)
             else:
                 corresp = None
-                imagenames = [x for x in os.listdir(f"{self.rootdir}/objaverse_rendering/{uid}/") if x.endswith('.png') ]
+                imagenames = [x for x in os.listdir(f"{self.rootdir}/objaverse_rendering/{uid}/") if x.endswith('.png')]
                 # check if filepath stem if of the form f'{0:5d}.png'
                 imagenames = [f"{self.rootdir}/objaverse_rendering/{uid}/{x}" for x in imagenames if x.split('.')[0].isdigit()]
                 imagenames = [[imagenames[i+x] for x in range(self.num)] for i in np.arange(0, len(imagenames)-self.num, self.num)]
@@ -243,8 +243,8 @@ class ObjaverseDataset(Dataset):
             possible_prompts = self.prompts[uid]
             if (corresp is None and self.warping) or len(possible_prompts) < self.num * (k + 1):
                 return {}
-            
-            possible_prompts = possible_prompts[min(len(possible_prompts)-self.num, self.num*k): ]
+
+            possible_prompts = possible_prompts[min(len(possible_prompts)-self.num, self.num*k):]
             images = []
             masks = []
             depths = []
@@ -252,7 +252,7 @@ class ObjaverseDataset(Dataset):
             scales = []
             shifts = []
 
-            for counter in range(len(imagenames)): 
+            for counter in range(len(imagenames)):
                 orig_image, mask, scale, shift = scale_shift(imagenames[counter])
                 depth = get_depth(imagenames[counter], scale, shift)
                 if orig_image is None or depth is None:
@@ -268,10 +268,10 @@ class ObjaverseDataset(Dataset):
                 prompts += [prompt]
                 scales.append(scale)
                 shifts.append(shift)
-                counter+=1
+                counter += 1
 
             batch = {
-                'images': 2*torch.stack(images) -1.,
+                'images': 2*torch.stack(images) - 1.,
                 'depths': torch.stack(depths),
                 'masks': torch.cat(masks),
                 'prompts': prompts,
@@ -307,7 +307,7 @@ class ObjaverseDataset(Dataset):
         """
         result = {x: [] for x in list(batch[0].keys())}
         for batch_obj in batch:
-            if len(batch_obj.keys()) <=0:
+            if len(batch_obj.keys()) <= 0:
                 return None
         for batch_obj in batch:
             for key in result.keys():
@@ -317,5 +317,5 @@ class ObjaverseDataset(Dataset):
                 result[key] = [item for sublist in result[key] for item in sublist]
             else:
                 result[key] = torch.cat(result[key], dim=0)
-        
+
         return result

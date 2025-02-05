@@ -6,11 +6,9 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import numpy as np
 import torch
 from diffusers import AutoencoderKL, FlowMatchEulerDiscreteScheduler, FluxPipeline
-from diffusers.models.autoencoders import AutoencoderKL
 from diffusers.models.transformers import FluxTransformer2DModel
 from diffusers.pipelines.flux.pipeline_flux_controlnet import *
 from diffusers.pipelines.flux.pipeline_output import FluxPipelineOutput
-from diffusers.schedulers import FlowMatchEulerDiscreteScheduler
 from diffusers.utils import is_torch_xla_available
 from diffusers.utils.torch_utils import randn_tensor
 from transformers import (
@@ -133,17 +131,16 @@ class FluxCustomPipeline(FluxPipeline):
         num=3
     ):
         super().__init__(vae=vae,
-            text_encoder=text_encoder,
-            text_encoder_2=text_encoder_2,
-            tokenizer=tokenizer,
-            tokenizer_2=tokenizer_2,
-            transformer=transformer,
-            scheduler=scheduler,
-            image_encoder=image_encoder,
-            feature_extractor=feature_extractor,
-        )
+                         text_encoder=text_encoder,
+                         text_encoder_2=text_encoder_2,
+                         tokenizer=tokenizer,
+                         tokenizer_2=tokenizer_2,
+                         transformer=transformer,
+                         scheduler=scheduler,
+                         image_encoder=image_encoder,
+                         feature_extractor=feature_extractor)
         self.num = num
-    
+
     def prepare_latents(
         self,
         batch_size,
@@ -262,7 +259,6 @@ class FluxCustomPipeline(FluxPipeline):
             latents,
         )
         self.joint_attention_kwargs.update({"txt_ids": text_ids, "img_ids_concat": latent_image_ids_concat})
-
 
         # 5. Prepare timesteps
         sigmas = np.linspace(1.0, 1 / num_inference_steps, num_inference_steps)
