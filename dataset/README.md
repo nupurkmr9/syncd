@@ -1,6 +1,6 @@
 ## Getting Started
 
-We require a GPU with atleast 48GB VRAM. Basic environment setup is descriped [here](https://github.com/nupurkmr9/syncd-project/blob/main/README.md#getting-started)
+We require a GPU with atleast 48GB VRAM. The base environment setup is described [here](https://github.com/nupurkmr9/syncd/blob/main/README.md#getting-started)
 
 ### Defomable dataset generation
 
@@ -11,7 +11,7 @@ python gen_deformable.py --save_attn_mask --outdir assets/metadata/deformable_da
 
 ### Rigid object dataset generation
 
-A sample dataset generation command on a single objaverse asset: 
+A sample dataset generation command on a single Objaverse asset: 
 
 ```
 wget https://www.cs.cmu.edu/~syncd-project/assets/prompts_objaverse.pt -P assets/generated_prompts/
@@ -34,7 +34,7 @@ python gen_prompts.py
 ```
 
 
-Bakcground description for CAP3D based objaverse assets:
+Background description for Objaverse assets:
 ```
 wget https://huggingface.co/datasets/tiange/Cap3D/resolve/main/misc/Cap3D_automated_Objaverse_old.csv?download=true -O Cap3D_automated_Objaverse_old.csv
 python gen_prompts.py --rigid --captions Cap3D_automated_Objaverse_old.csv

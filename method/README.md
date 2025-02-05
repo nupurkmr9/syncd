@@ -1,6 +1,6 @@
 ## Getting Started
 
-Basic environment setup is descriped [here](https://github.com/nupurkmr9/syncd-project/blob/main/README.md#getting-started)
+The base environment setup is described [here](https://github.com/nupurkmr9/syncd/blob/main/README.md#getting-started)
 
 ### Sampling
 

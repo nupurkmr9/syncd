@@ -1,6 +1,6 @@
 # Synthetic Customization Data (SynCD)
 
-> *This is a reimplementation of the paper in diffusers framework after the end of internship. 
+> *This is a reimplementation of the paper in diffusers framework after the end of the internship. 
 
 
 <br>
@@ -57,13 +57,13 @@ https://github.com/user-attachments/assets/874eace8-a1dd-4c31-9226-f1cfb24f42bb
 </p>
 
 
-## SynCD Overeview
+## SynCD Overview
 
 <p align="center">
 <img src='assets/datapipeline.jpg' align="center" width=700>
 </p>
 
-Our dataset generation pipeline is tailored for (a) Deformable categories where we use descriptive prompts and Masekd Shared Attention (MSA) among foreground objects regions of the images to promote visual consistency. (b) Rigid object categories, where we additionally employ depth and cross-view warping using exising Objaverse assets to ensure 3D multiview consistency. We further use DINOv2 and aesthetic score to filter out low-quality images to create our final training dataset.
+Our dataset generation pipeline is tailored for (a) Deformable categories where we use descriptive prompts and Masekd Shared Attention (MSA) among foreground objects regions of the images to promote visual consistency. (b) Rigid object categories, where we additionally employ depth and cross-view warping using existing Objaverse assets to ensure 3D multiview consistency. We further use DINOv2 and aesthetic score to filter out low-quality images to create our final training dataset.
 
 
 ## Model Overview
@@ -73,12 +73,13 @@ Our dataset generation pipeline is tailored for (a) Deformable categories where 
 <img src='assets/method.jpg' align="center" width=500>
 </p>
 
-We finetune a pre-trained IP-Adapter based model (global feature injection) on our genereated dataset (SynCD). During training we additinally employ Masked Shared Attentin (MSA) between target and reference features of the image (fine-grained feature injection). This helps the model to incorporate more fine-grained features from multiple reference images during inference.
+We finetune a pre-trained IP-Adapter based model (global feature injection) on our generated dataset (SynCD). During training, we additionally employ Masked Shared Attention (MSA) between target and reference features of the image (fine-grained feature injection). This helps the model to incorporate more fine-grained features from multiple reference images during inference.
 
 ## Getting Started
 
 ```
-git clone https://github.com/nupurkmr9/syncd-project.git
+git clone https://github.com/nupurkmr9/syncd.git
+cd syncd
 conda create -n syncd python=3.10
 conda activate syncd
 pip3 install torch torchvision torchaudio (Or appropriate torch>2.0 from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))
