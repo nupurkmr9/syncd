@@ -20,7 +20,7 @@ data:
   params:
     batch_size: 1
     num_workers: 4
-    rootdir: [['../dataset/assets/metadata/rigid_data']]
+    rootdir: [['./syncd']]
     img_size: 1024
     numref: 3
     repeat: 1
@@ -29,8 +29,8 @@ data:
     drop_txt: 0.05
     drop_im: 0.05
     drop_mask: 0.1
-    filter_aesthetics: 6.0
-    filter_dino: 0.7
+    filter_aesthetics: -1.0
+    filter_dino: -1.0
     dilate_mask: True
     random_crop: True
     shuffle: False
@@ -66,7 +66,7 @@ lightning:
           n_rows: 2
 
   trainer:
-    devices: 0,1,2,3,4,5,6,7
+    devices: 0,1 #,2,3,4,5,6,7
     benchmark: True
     num_sanity_val_steps: 0
     accumulate_grad_batches: 4

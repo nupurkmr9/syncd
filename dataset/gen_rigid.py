@@ -176,7 +176,7 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, rootdir='./', gu
                 im_.save(f"{outdir}/masks/{num_sample}_{rank}_{numref_}.jpg")
 
             metadata.append({
-                'filenames': [f"{outdir}/{num_sample}_{rank}_{numref_}.jpg" for numref_ in range(NUM)],
+                'filenames': [f"{num_sample}_{rank}_{numref_}.jpg" for numref_ in range(NUM)],
                 'prompts': prompts,
                 'original_filenames': batch['imagenames'],
                 'objaverse_id': str(Path(batch['imagenames'][0]).parent.stem),

@@ -160,7 +160,7 @@ class SynCDDataset(Dataset):
 
                         if np.sum(valid_clique) > 1:
                             self.metadata.append(counter)
-                            self.images[counter] = [item['filenames'][i] for i in range(len(item['filenames'])) if valid_clique[i] > 0]
+                            self.images[counter] = [f"{DIR}/{item['filenames'][i]}" for i in range(len(item['filenames'])) if valid_clique[i] > 0]
                             self.prompts[counter] = [item['prompts'][i] for i in range(len(item['filenames'])) if valid_clique[i] > 0]
                             counter += 1
                             self.metadata_files.append(item)

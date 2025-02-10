@@ -95,7 +95,7 @@ def run_dataset_gen(categories, outdir='./', inference_step=50, prompt_file=None
                         im_.save(f"{outdir}/masks/{cat_}_{numdesc}_{num_sample}_{rank}_{numref_}.jpg")
 
                 metadata.append({
-                    'filenames': [f"{outdir}/{cat_}_{numdesc}_{num_sample}_{rank}_{numref_}.jpg" for numref_ in range(NUM)],
+                    'filenames': [f"{cat_}_{numdesc}_{num_sample}_{rank}_{numref_}.jpg" for numref_ in range(NUM)],
                     'prompts': prompt,
                     'objaverse_id': '',
                     'category': 'deformable',

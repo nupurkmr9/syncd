@@ -1,0 +1,5 @@
+# Ignore all zip files
+*.zip
+
+# Ignore everything in dataset/assets/metadata/objaverse_rendering
+dataset/assets/metadata/objaverse_rendering/ 

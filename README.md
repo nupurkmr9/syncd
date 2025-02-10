@@ -21,7 +21,7 @@ We propose a pipeline for synthetic training data generation consisting of multi
 
 https://github.com/user-attachments/assets/874eace8-a1dd-4c31-9226-f1cfb24f42bb
 
-<strong>Note:</strong> We will release our final filtered dataset soon.
+<strong>Note:</strong> Our dataset is available to download [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main)
 
 ## Results
 
@@ -82,7 +82,7 @@ git clone https://github.com/nupurkmr9/syncd.git
 cd syncd
 conda create -n syncd python=3.10
 conda activate syncd
-pip3 install torch torchvision torchaudio (Or appropriate torch>2.0 from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))
+pip3 install torch torchvision torchaudio  # (Or appropriate torch>2.0 from [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))
 pip install -r assets/requirements.txt
 ```
 
@@ -92,8 +92,9 @@ pip install -r assets/requirements.txt
 
 ## Todo:
 
-- [ ] Release the synthetic dataset (SynCD): by Feb 10
-- [ ] Flux fine-tuning on the generated dataset. 
+- [x] Release the synthetic dataset (SynCD): Avaialble to download [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main).
+- [ ] SDXL fine-tuning with deepspeed. 
+- [ ] Flux fine-tuning on our dataset. 
 
 
 ## Acknowledgements
