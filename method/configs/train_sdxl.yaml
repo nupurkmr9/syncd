@@ -1,6 +1,6 @@
 model:
   base_learning_rate: 5.0e-6
-  target: pipelines.sdxl_pipeline.model.GenCDDiffusionSDXL
+  target: pipelines.sdxl_pipeline.model.SynCDDiffusionSDXL
   params:
     pretrained_model_name_or_path: "bghira/terminus-xl-gamma-v1"
     num: 3

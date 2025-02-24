@@ -326,6 +326,7 @@ class ConcatDataset(Dataset):
             self.dataset.append(SynCDDataset(rootdir=rootdir[i], mode=mode_, **kwargs))
             self.length += len(self.dataset[-1])
             self.split.append(self.length)
+        self.collate_fn = SynCDDataset.collate_fn
 
     def __len__(self):
         return self.length

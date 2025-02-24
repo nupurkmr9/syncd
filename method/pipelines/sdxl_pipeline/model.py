@@ -22,7 +22,7 @@ PIPELINECLASS = {
         }
 
 
-class GenCDDiffusionBase(L.LightningModule):
+class SynCDDiffusionBase(L.LightningModule):
     def __init__(
         self,
         pretrained_model_name_or_path="ptx0/terminus-xl-gamma-v1",
@@ -44,7 +44,7 @@ class GenCDDiffusionBase(L.LightningModule):
         shared_attn=True,
         training_scheduler='constant',
     ):
-        super(GenCDDiffusionBase, self).__init__()
+        super(SynCDDiffusionBase, self).__init__()
 
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
         self.regularization_prob = regularization_prob
@@ -217,12 +217,12 @@ class GenCDDiffusionBase(L.LightningModule):
         return {'optimizer': optimizer}
 
 
-class GenCDDiffusionSDXL(GenCDDiffusionBase):
+class SynCDDiffusionSDXL(SynCDDiffusionBase):
     def __init__(
         self,
         **kwargs,
     ):
-        super(GenCDDiffusionSDXL, self).__init__(**kwargs)
+        super(SynCDDiffusionSDXL, self).__init__(**kwargs)
         self.pipeline_model = "sdxl"
 
     def setup_pipeline(self, pretrained_model_name_or_path, global_condition_type, ip_adapter_scale, ip_adapter_name, torch_dtype=torch.float32,):

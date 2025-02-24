@@ -12,16 +12,21 @@
 
 We propose a pipeline for synthetic training data generation consisting of multiple images of the same object under different lighting, poses, and backgrounds, using either explicit 3D object assets or, more implicitly, using masked shared attention across different views. Given the training data, we train a new encoder-based model for customization/personalization. During inference, our method can successfully generate new compositions of a reference object using text prompts.
 
-***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br>
+***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br> (ArXiv 2025)    
 [Nupur Kumari](https://nupurkmr9.github.io/), [Xi Yin](https://xiyinmsu.github.io), [Jun-Yan Zhu](https://www.cs.cmu.edu/~junyanz/), [Ishan Misra](https://imisra.github.io), [Samaneh Azadi](https://github.com/azadis)<br>
 
-### [website](https://www.cs.cmu.edu/~syncd-project/)  | [paper](https://arxiv.org/abs/2502.01720) 
+### [website](https://www.cs.cmu.edu/~syncd-project/)  | [paper](https://arxiv.org/abs/2502.01720)  | [Demo](https://huggingface.co/spaces/nupurkmr9/SynCD) 
 
-## Sample Generated Dataset
+## NEWS!!
+
+* [Demo](https://huggingface.co/spaces/nupurkmr9/SynCD) based on [FLUX.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) model fine-tuning. Training code will be released soon.
+
+## Synthetic Customization Dataset (SynCD)
 
 https://github.com/user-attachments/assets/874eace8-a1dd-4c31-9226-f1cfb24f42bb
 
 <strong>Note:</strong> Our dataset is available to download [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main)
+
 
 ## Results
 

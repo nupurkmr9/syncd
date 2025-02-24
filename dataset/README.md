@@ -1,4 +1,8 @@
-## Getting Started
+## Download SynCD
+
+You can download our filtered generated dataset [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main)
+
+## Getting Started (to generate your own dataset)
 
 We require a GPU with atleast 48GB VRAM. The base environment setup is described [here](https://github.com/nupurkmr9/syncd/blob/main/README.md#getting-started)
 
@@ -9,7 +13,7 @@ cd dataset
 python gen_deformable.py --save_attn_mask --outdir assets/metadata/deformable_data 
 ```
 
-### Rigid dataset generation (sample)
+### Rigid dataset generation
 
 A sample dataset generation command on a single Objaverse asset: 
 
@@ -44,7 +48,7 @@ bash assets/unzip.sh assets/metadata/objaverse_rendering/
 python gen_corresp.py --download --rendered_path ./assets/metadata/objaverse_rendering --objaverse_path ./assets/metadata/objaverse_assets --outdir ./assets/metadata
 ```
 
-Dataset generation Code:
+Dataset generation:
 
 ```
 torchrun --nnodes=1 --nproc_per_node=1 --node_rank=0 --master_port=12356  gen_rigid.py  --rootdir ./assets/metadata  --promptpath assets/generated_prompts/prompts_objaverse.pt  --outdir <output-path-to-save-dataset>
