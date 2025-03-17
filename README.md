@@ -19,7 +19,8 @@ We propose a pipeline for synthetic training data generation consisting of multi
 
 ## NEWS!!
 
-* [Demo](https://huggingface.co/spaces/nupurkmr9/SynCD) based on [FLUX.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) model fine-tuning. Training code will be released soon.
+* [Demo](https://huggingface.co/spaces/nupurkmr9/SynCD) based on [FLUX.1-dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) model fine-tuning. 
+* Training code with FLUX. See [here](method/README.md)
 
 ## Synthetic Customization Dataset (SynCD)
 

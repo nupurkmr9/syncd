@@ -99,7 +99,6 @@ def retrieve_timesteps(
 
 
 def normalized_guidance_image(neg_noise_pred, noise_pred, image_noise_pred, true_cfg_scale, image_cfg_scale):
-    print(neg_noise_pred.shape, noise_pred.shape, image_noise_pred.shape)
     diff_img = image_noise_pred - neg_noise_pred
     diff_txt = noise_pred - image_noise_pred
 
