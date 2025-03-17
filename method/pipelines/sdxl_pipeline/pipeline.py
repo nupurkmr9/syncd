@@ -146,14 +146,11 @@ def normalized_guidance_image(pred_uncond, pred_cond, pred_img, guidance_scale, 
     diff_img = pred_img - pred_uncond
     diff_txt = pred_cond - pred_img
 
-    ones = torch.ones_like(diff_txt)
     diff_norm_txt = diff_txt.norm(p=2, dim=[-1, -2, -3], keepdim=True)
     diff_norm_img = diff_img.norm(p=2, dim=[-1, -2, -3], keepdim=True)
-    norm_threshold = torch.minimum(diff_norm_img, diff_norm_txt)
-    scale_factor = torch.minimum(ones, norm_threshold / diff_norm_txt)
-    diff_txt = diff_txt * scale_factor
-    scale_factor = torch.minimum(ones, norm_threshold / diff_norm_img)
-    diff_img = diff_img * scale_factor
+    min_norm = torch.minimum(diff_norm_img, diff_norm_txt)
+    diff_txt = diff_txt * torch.minimum(torch.ones_like(diff_txt), min_norm / diff_norm_txt)
+    diff_img = diff_img * torch.minimum(torch.ones_like(diff_txt), min_norm / diff_norm_img)
 
     pred_guided = pred_img + img_scale * diff_img + guidance_scale * diff_txt
     return pred_guided

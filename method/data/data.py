@@ -129,7 +129,7 @@ class SynCDDataset(Dataset):
                 collate_batch[key] = [item for sublist in collate_batch[key] for item in sublist]
             else:
                 collate_batch[key] = torch.cat(collate_batch[key], dim=0)
-
+        collate_batch['num'] = batch[0]['images'].shape[0]
         return collate_batch
 
     def setup_metadata(self,):
@@ -287,7 +287,7 @@ class DummyDataset(SynCDDataset):
             mask = ImageOps.grayscale(Image.open(f'{parentfolder}/masks/{imagestem}.jpg')).convert('L').point(fn, mode='1').resize(image.size)
             mask = Image.fromarray((np.array(mask) * 255).astype(np.uint8))
 
-            image, mask, _ = square_crop_with_mask(image, mask, random=True)
+            image, mask, _ = square_crop_with_mask(image, mask, random=False)
             ref_image = image
 
             orig_h, orig_w = image.size

@@ -10,4 +10,6 @@ natsort
 omegaconf
 kornia
 peft
+prodigyopt
+deepspeed
 git+https://github.com/openai/CLIP.git

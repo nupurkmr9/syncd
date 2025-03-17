@@ -8,14 +8,20 @@ The base environment setup is described [here](https://github.com/nupurkmr9/sync
 cd method
 mkdir pretrained_model
 wget https://www.cs.cmu.edu/~syncd-project/assets/sdxl_finetuned_20k.ckpt -P pretrained_model
+wget https://huggingface.co/spaces/nupurkmr9/SynCD/resolve/main/models/pytorch_model.bin?download=true -O pretrained_model/pytorch_model.bin
 wget https://www.cs.cmu.edu/~syncd-project/assets/actionfigure_1.tar.gz
 tar -xvzf actionfigure_1.tar.gz
 
+# sample from SDXL model
+python sample.py --prompt "An action figure riding a motorcycle" --ref_images actionfigure_1 --ref_category "action figure" --finetuned_path pretrained_model/sdxl_finetuned_20k.ckpt
 
-python sample.py --prompt "an actionfigure riding a motorcycle" --ref_images actionfigure_1 --ref_category "actionfigure" --finetuned_path pretrained_model/sdxl_finetuned_20k.ckpt
+# sample from FLUX model
+python sample_flux.py --prompt "An action figure on a beach. Waves in the background. Realistic shot." --ref_images actionfigure_1 --finetuned_path pretrained_model/pytorch_model.bin --numref 3
 ```
 
 ### Training on our Dataset
+
+Training requires 80GB VRAM GPUs
 
 * Download our dataset:
 
@@ -28,7 +34,13 @@ bash unzip.sh
 cd ..
 ```
 
-* Train SDXL (requires 80GB VRAM for training at 1K resolution)
+* Train FLUX.
+```
+deepspeed main_flux.py --base configs/train_flux.yaml --name flux_syncd 
+```
+
+
+* Train SDXL
 ```
 python main.py --base configs/train_sdxl.yaml --name sdxl_syncd 
 ```

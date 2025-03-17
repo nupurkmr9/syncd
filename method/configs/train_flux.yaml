@@ -1,0 +1,41 @@
+model:
+  pretrained_model_name_or_path: "black-forest-labs/FLUX.1-dev"
+  num: -1
+  regularization_prob: 0.0
+  trainkeys: lora
+  add_lora: True
+  masked: False
+  shared_attn: True
+  rank: 32
+  other_kwargs:
+    uniform_schedule: False
+
+data:
+  target: data.data.CustomLoader
+  params:
+    batch_size: 1
+    num_workers: 4
+    rootdir: [['./syncd']]
+    img_size: 256
+    numref: 3
+    repeat: 1
+    regularization: 0.0
+    drop_both: 0.05
+    drop_txt: 0.05
+    drop_im: 0.05
+    drop_mask: 0.1
+    filter_aesthetics: -1.0
+    filter_dino: -1.0
+    dilate_mask: True
+    random_crop: True
+    shuffle: False
+    random_permute: True
+    mode: rigid
+    kernel_size: 5
+
+training:
+  max_steps: 15100
+  save_every: 5000
+  gradient_accumulation_steps: 2
+  base_learning_rate: 1.0
+  log_every: 10

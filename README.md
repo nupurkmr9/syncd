@@ -98,9 +98,8 @@ pip install -r assets/requirements.txt
 ## Todo:
 
 - [x] Release the synthetic dataset (SynCD): Avaialble to download [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main).
+- [x] Flux fine-tuning on our dataset. 
 - [ ] SDXL fine-tuning with deepspeed. 
-- [ ] Flux fine-tuning on our dataset. 
-
 
 ## Acknowledgements
 We are grateful to the below works for their code/data/model. Our code is built upon them. 
