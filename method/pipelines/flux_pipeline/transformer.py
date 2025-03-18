@@ -6,14 +6,11 @@
 
 import math
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from einops import rearrange
-from peft.tuners.lora.layer import LoraLayer
-
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import FromOriginalModelMixin, PeftAdapterMixin
 from diffusers.models.attention import FeedForward
@@ -38,8 +35,11 @@ from diffusers.utils import (
     unscale_lora_layers,
 )
 from diffusers.utils.torch_utils import maybe_allow_in_graph
+from einops import rearrange
+from peft.tuners.lora.layer import LoraLayer
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+
 
 class FluxAttnProcessor2_0:
     """Attention processor used typically in processing the SD3-like self-attention projections."""
@@ -58,18 +58,12 @@ class FluxAttnProcessor2_0:
         encoder_hidden_states: torch.FloatTensor = None,
         attention_mask: Optional[torch.FloatTensor] = None,
         image_rotary_emb: Optional[torch.Tensor] = None,
-        shared_attn: bool=False, num=2,
-        mode="a", 
-        ref_dict: dict = None,
-        single: bool=False,
+        shared_attn: bool = False, num=2,
         scale: float = 1.0,
         timestep: float = 0,
-        val: bool = False,
         neg_mode: bool = False,
     ) -> torch.FloatTensor:
-        if mode == 'w': # and single:
-            ref_dict[self.name] = hidden_states.detach()
-        
+
         batch_size, _, _ = (
             hidden_states.shape
             if encoder_hidden_states is None
@@ -114,16 +108,16 @@ class FluxAttnProcessor2_0:
             query = torch.cat([encoder_hidden_states_query_proj, query], dim=2)
             key = torch.cat([encoder_hidden_states_key_proj, key], dim=2)
             value = torch.cat([encoder_hidden_states_value_proj, value], dim=2)
-        
+
         if image_rotary_emb is not None:
             from diffusers.models.embeddings import apply_rotary_emb
-            query = apply_rotary_emb(query, image_rotary_emb)
-            key = apply_rotary_emb(key, image_rotary_emb)
+            query = apply_rotary_emb(query, image_rotary_emb).to(hidden_states.dtype)
+            key = apply_rotary_emb(key, image_rotary_emb).to(hidden_states.dtype)
 
         if neg_mode:
             res = int(math.sqrt((end_of_hidden_states-(text_seq if encoder_hidden_states is None else 0)) // num))
             hw = res*res
-            mask_ = torch.ones(1, res, num*res, res, num*res).to(query.device)
+            mask_ = torch.zeros(1, res, num*res, res, num*res).to(query.device)
             for i in range(num):
                 mask_[:, :, i*res:(i+1)*res, :, i*res:(i+1)*res] = 1
             mask_ = rearrange(mask_, "b h w h1 w1 -> b (h w) (h1 w1)")
@@ -131,7 +125,7 @@ class FluxAttnProcessor2_0:
             mask[:, 512:, 512:] = mask_
             mask = mask.bool()
             mask = rearrange(mask.unsqueeze(0).expand(attn.heads, -1, -1, -1), "nh b ... -> b nh ...")
-            
+
         hidden_states = F.scaled_dot_product_attention(query, key, value, dropout_p=0.0, is_causal=False, attn_mask=mask)
         hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
 
@@ -140,7 +134,7 @@ class FluxAttnProcessor2_0:
         if encoder_hidden_states is not None:
             encoder_hidden_states, hidden_states = (
                 hidden_states[:, : encoder_hidden_states.shape[1]],
-                hidden_states[:, encoder_hidden_states.shape[1] : ],
+                hidden_states[:, encoder_hidden_states.shape[1]:],
             )
             hidden_states = hidden_states[:, :end_of_hidden_states]
 
@@ -206,12 +200,13 @@ class FluxSingleTransformerBlock(nn.Module):
         image_rotary_emb=None,
         joint_attention_kwargs: Optional[Dict[str, Any]] = None,
     ):
+        dtype = hidden_states.dtype
         residual = hidden_states
         norm_hidden_states, gate = self.norm(hidden_states, emb=temb)
         mlp_hidden_states = self.act_mlp(self.proj_mlp(norm_hidden_states))
 
         attn_output = self.attn(
-            hidden_states=norm_hidden_states,
+            hidden_states=norm_hidden_states.to(dtype),
             image_rotary_emb=image_rotary_emb,
             **joint_attention_kwargs,
             single=True,
@@ -276,14 +271,14 @@ class FluxTransformerBlock(nn.Module):
         image_rotary_emb=None,
         joint_attention_kwargs: Optional[Dict[str, Any]] = None
     ):
+        dtype = hidden_states.dtype
         norm_hidden_states, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.norm1(hidden_states, emb=temb)
-
         norm_encoder_hidden_states, c_gate_msa, c_shift_mlp, c_scale_mlp, c_gate_mlp = (self.norm1_context(encoder_hidden_states, emb=temb))
 
         # Attention.
         attn_output, context_attn_output = self.attn(
-            hidden_states=norm_hidden_states,
-            encoder_hidden_states=norm_encoder_hidden_states,
+            hidden_states=norm_hidden_states.to(dtype),
+            encoder_hidden_states=norm_encoder_hidden_states.to(dtype),
             image_rotary_emb=image_rotary_emb,
             **joint_attention_kwargs,
             single=False,
@@ -338,7 +333,8 @@ def set_adapter_scale(model, alpha):
         # restore original scaling values after exiting the context
         for module, scaling in original_scaling.items():
             module.scaling = scaling
-            
+
+
 class FluxTransformer2DModelWithMasking(
     ModelMixin, ConfigMixin, PeftAdapterMixin, FromOriginalModelMixin
 ):
@@ -452,7 +448,7 @@ class FluxTransformer2DModelWithMasking(
             fn_recursive_add_processors(name, module, processors)
 
         return processors
-    
+
     def set_attn_processor(self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]]):
         r"""
         Sets the attention processor to use to compute attention.
@@ -565,9 +561,7 @@ class FluxTransformer2DModelWithMasking(
         if img_ids.ndim == 3:
             img_ids = img_ids[0]
 
-        
-        # txt_ids = torch.zeros((1024,3)).to(txt_ids.device, dtype=txt_ids.dtype)
-        ids = torch.cat((txt_ids, img_ids), dim=0)
+        ids = torch.cat((txt_ids, img_ids), dim=0).to(hidden_states.dtype)
 
         image_rotary_emb = self.pos_embed(ids)
 
@@ -643,7 +637,7 @@ class FluxTransformer2DModelWithMasking(
                     joint_attention_kwargs=joint_attention_kwargs,
                 )
 
-        hidden_states = hidden_states[:, encoder_hidden_states.shape[1] :, ...]
+        hidden_states = hidden_states[:, encoder_hidden_states.shape[1]:, ...]
 
         hidden_states = self.norm_out(hidden_states, temb)
         output = self.proj_out(hidden_states)

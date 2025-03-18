@@ -12,7 +12,7 @@ from PIL import Image
 
 sys.path.append('./')
 from data.utils_ import square_crop_shortest_side
-from pipelines.flux_pipeline.pipeline import SynCDFluxPipeline
+from pipelines.flux_pipeline.pipeline import SynCDFluxPipeline as SynCDFluxPipeline
 from pipelines.flux_pipeline.transformer import FluxTransformer2DModelWithMasking
 
 
@@ -33,9 +33,9 @@ def encode_target_images(images, pipeline):
 def sample(prompt, ref_images, outdir, finetuned_path, num_images_per_prompt, inference_steps, numref, guidance_scale, true_cfg_scale, image_guidance_scale, seed):
 
     torch_dtype = torch.bfloat16
-    device='cuda'
+    device = 'cuda'
     height = 512
-        
+
     transformer = FluxTransformer2DModelWithMasking.from_pretrained(
                 'black-forest-labs/FLUX.1-dev',
                 subfolder='transformer',
@@ -45,7 +45,7 @@ def sample(prompt, ref_images, outdir, finetuned_path, num_images_per_prompt, in
     for name, attn_proc in pipeline.transformer.attn_processors.items():
         attn_proc.name = name
 
-    target_modules=[
+    target_modules = [
                     "to_k",
                     "to_q",
                     "to_v",
@@ -72,15 +72,14 @@ def sample(prompt, ref_images, outdir, finetuned_path, num_images_per_prompt, in
     if finetuned_path is not None:
         finetuned_path = torch.load(finetuned_path, map_location='cpu')
         transformer_dict = {}
-        for key,value in finetuned_path.items():
+        for key, value in finetuned_path.items():
             if 'transformer.base_model.model.' in key:
-                transformer_dict[key.replace('transformer.base_model.model.', '')] = value 
+                transformer_dict[key.replace('transformer.base_model.model.', '')] = value
         pipeline.transformer.load_state_dict(transformer_dict, strict=False)
-    
+
     pipeline.to(device)
     pipeline.enable_vae_slicing()
     pipeline.enable_vae_tiling()
-
 
     cat_ = Path(ref_images).stem
     os.makedirs(f'{outdir}/{cat_}', exist_ok=True)
@@ -103,22 +102,22 @@ def sample(prompt, ref_images, outdir, finetuned_path, num_images_per_prompt, in
         masklatent = rearrange(masklatent, "(b n) c h w -> b c h (n w)", n=numref)
         B, C, H, W = latents.shape
         latents = pipeline._pack_latents(latents, B, C, H, W)
-        masklatent = pipeline._pack_latents(masklatent.expand(-1, C, -1, -1) ,B, C, H, W)
+        masklatent = pipeline._pack_latents(masklatent.expand(-1, C, -1, -1), B, C, H, W)
 
         generated_image = pipeline(prompt,
-                latents_ref=latents,
-                latents_mask=masklatent,
-                guidance_scale=guidance_scale,
-                num_inference_steps=inference_steps,
-                height=height,
-                width=numref * height,
-                generator=torch.Generator(device="cuda").manual_seed(seed + counter),
-                joint_attention_kwargs={'shared_attn': True, 'num': numref},
-                return_dict=False,
-                negative_prompt="3d render, cartoon, low resolution, illustration, blurry, unrealistic",
-                true_cfg_scale=true_cfg_scale,
-                image_cfg_scale=image_guidance_scale,
-            )[0][0]
+                                   latents_ref=latents,
+                                   latents_mask=masklatent,
+                                   guidance_scale=guidance_scale,
+                                   num_inference_steps=inference_steps,
+                                   height=height,
+                                   width=numref * height,
+                                   generator=torch.Generator(device="cuda").manual_seed(seed + counter),
+                                   joint_attention_kwargs={'shared_attn': True, 'num': numref, 'attention_mask': torch.zeros((numref, 1,  64, 64), device=device).to(torch_dtype)},
+                                   return_dict=False,
+                                   negative_prompt="3d render, cartoon, low resolution, illustration, blurry, unrealistic",
+                                   true_cfg_scale=true_cfg_scale,
+                                   image_cfg_scale=image_guidance_scale,
+                                   )[0][0]
         torch.cuda.empty_cache()
         generated_image = rearrange(generated_image, "b c h (n w) -> (b n) c h w", n=numref)
         for _, img in enumerate(generated_image[::numref]):
@@ -148,20 +147,19 @@ def parse_args():
 def main(args):
     print(args)
     sample(args.prompt,
-            args.ref_images,
-            args.outdir,
-            args.finetuned_path,
-            args.num_images_per_prompt, 
-            args.inference_steps, 
-            args.numref,
-            args.guidance_scale,
-            args.true_cfg_scale,
-            args.image_guidance_scale,
-            args.seed,
-            )
+           args.ref_images,
+           args.outdir,
+           args.finetuned_path,
+           args.num_images_per_prompt,
+           args.inference_steps,
+           args.numref,
+           args.guidance_scale,
+           args.true_cfg_scale,
+           args.image_guidance_scale,
+           args.seed,
+           )
 
 
 if __name__ == "__main__":
     args = parse_args()
     main(args)
-

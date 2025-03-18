@@ -17,6 +17,11 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import torch
+from diffusers import FluxPipeline
+from diffusers.models.autoencoders import AutoencoderKL
+from diffusers.models.transformers import FluxTransformer2DModel
+from diffusers.schedulers import FlowMatchEulerDiscreteScheduler
+from diffusers.utils import is_torch_xla_available
 from transformers import (
     CLIPImageProcessor,
     CLIPTextModel,
@@ -26,21 +31,12 @@ from transformers import (
     T5TokenizerFast,
 )
 
-from diffusers import FluxPipeline
-from diffusers.image_processor import VaeImageProcessor
-from diffusers.loaders import FluxLoraLoaderMixin
-from diffusers.models.autoencoders import AutoencoderKL
-from diffusers.models.transformers import FluxTransformer2DModel
-from diffusers.schedulers import FlowMatchEulerDiscreteScheduler
-from diffusers.utils import USE_PEFT_BACKEND, is_torch_xla_available
-
 if is_torch_xla_available():
     import torch_xla.core.xla_model as xm
 
     XLA_AVAILABLE = True
 else:
     XLA_AVAILABLE = False
-
 
 
 def calculate_shift(
@@ -102,16 +98,17 @@ def normalized_guidance_image(neg_noise_pred, noise_pred, image_noise_pred, true
     diff_img = image_noise_pred - neg_noise_pred
     diff_txt = noise_pred - image_noise_pred
 
-    diff_norm_txt = diff_txt.norm(p=2, dim=[-1, -2], keepdim=True) 
-    diff_norm_img = diff_img.norm(p=2, dim=[-1, -2], keepdim=True) 
+    diff_norm_txt = diff_txt.norm(p=2, dim=[-1, -2], keepdim=True)
+    diff_norm_img = diff_img.norm(p=2, dim=[-1, -2], keepdim=True)
     min_norm = torch.minimum(diff_norm_img, diff_norm_txt)
     diff_txt = diff_txt * torch.minimum(torch.ones_like(diff_txt), min_norm / diff_norm_txt)
     diff_img = diff_img * torch.minimum(torch.ones_like(diff_txt), min_norm / diff_norm_img)
-    pred_guided = image_noise_pred + image_cfg_scale * diff_img + true_cfg_scale *  diff_txt
+    pred_guided = image_noise_pred + image_cfg_scale * diff_img + true_cfg_scale * diff_txt
     return pred_guided
 
+
 class SynCDFluxPipeline(FluxPipeline):
-    
+
     model_cpu_offload_seq = "text_encoder->text_encoder_2->transformer->vae"
     _optional_components = []
     _callback_tensor_inputs = ["latents", "prompt_embeds"]
@@ -127,7 +124,7 @@ class SynCDFluxPipeline(FluxPipeline):
         transformer: FluxTransformer2DModel,
         image_encoder: CLIPVisionModelWithProjection = None,
         feature_extractor: CLIPImageProcessor = None,
-        ### 
+        ###
         num=2,
     ):
         super().__init__(
@@ -173,8 +170,8 @@ class SynCDFluxPipeline(FluxPipeline):
         #####
         latents_ref: Optional[torch.Tensor] = None,
         latents_mask: Optional[torch.Tensor] = None,
-        return_latents: bool=False,
-        image_cfg_scale: float=0.0,
+        return_latents: bool = False,
+        image_cfg_scale: float = 0.0,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -427,12 +424,11 @@ class SynCDFluxPipeline(FluxPipeline):
                             joint_attention_kwargs=self.joint_attention_kwargs,
                             return_dict=False,
                         )[0]
-                        
+
                     if image_cfg_scale == 0:
                         noise_pred = neg_noise_pred + true_cfg_scale * (noise_pred - neg_noise_pred)
                     else:
                         noise_pred = normalized_guidance_image(neg_noise_pred, noise_pred, image_noise_pred, true_cfg_scale, image_cfg_scale)
-
 
                 # compute the previous noisy sample x_t -> x_t-1
                 latents_dtype = latents.dtype
