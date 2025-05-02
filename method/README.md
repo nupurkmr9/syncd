@@ -32,7 +32,7 @@ python sample.py --prompt "An action figure riding a motorcycle" --ref_images ac
 This should generate an image like below:
 
 <p align="center">
-<img src='assets/sample_sdxl.jpg' align="center" width=500>
+<img src='../assets/sample_sdxl.jpg' align="center" width=500>
 </p>
 
 ```python
@@ -45,7 +45,7 @@ python sample_flux.py --prompt "An action figure on a beach. Waves in the backgr
 This should generate an image like below:
 
 <p align="center">
-<img src='assets/sample_flux.jpg' align="center" width=500>
+<img src='../assets/sample_flux.jpg' align="center" width=500>
 </p>
 
 ### Training on our Dataset
@@ -63,31 +63,15 @@ bash unzip.sh
 cd ..
 ```
 
-* Train FLUX.
+* Fine-tune FLUX.
 ```
 deepspeed main_flux.py --base configs/train_flux.yaml --name flux_syncd 
 ```
 
 
-* Train SDXL
+* Fine-tune SDXL
 ```
 python main.py --base configs/train_sdxl.yaml --name sdxl_syncd 
 ```
 
-
-### Training on your generated Dataset:
-
-* Calculate DINOv2 and Aesthetics Score
-
-```
-python calculate_scores.py --batch_size 1 --folder <path-to-dataset>
-```
-
-* Model training
-
-Update dataset hyperparameters, including path and filtering thresholds, at `data.params` in configs/train_sdxl.yaml
-
-```
-python main.py --base configs/train_sdxl.yaml
-
-```
+You can train on your own dataset by updating the hyperparameters, including dataset path and filtering thresholds, at `data.params` in the config.

@@ -31,10 +31,10 @@ def init_distributed():
     
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", type=str, default="", help="postfix for logdir")
+    parser.add_argument("--name", type=str, default="flux_syncd", help="postfix for logdir")
     parser.add_argument("--logdir", type=str, default="logs", help="base folder for logs")
     parser.add_argument("--resume", type=str, help="resume from logdir or checkpoint")
-    parser.add_argument("--base", default="configs/train_flux_2pass.yaml", help="path to base config")
+    parser.add_argument("--base", default="configs/train_flux.yaml", help="path to base config")
     parser.add_argument("--seed", type=int, default=23, help="random seed")
     parser.add_argument("--local_rank", type=int, default=0)
     parser.add_argument("--mode", type=str, default="syncd", help="mode to train")
