@@ -131,7 +131,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run the sampling script")
     parser.add_argument("--prompt", type=str, help="prompt", default="An actionfigure wearing a hat")
     parser.add_argument("--ref_images", type=str, help="path to reference images")
-    parser.add_argument("--outdir", type=str, default="./samples")
+    parser.add_argument("--outdir", type=str, default="./samples_flux")
     parser.add_argument("--finetuned_path", type=str, help="path to finetuned model", default=None)
     parser.add_argument("--num_images_per_prompt", type=int, help="Number of generated images per prompt", default=4)
     parser.add_argument("--inference_steps", type=int, help="Number of inference steps", default=30)

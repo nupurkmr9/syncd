@@ -92,15 +92,38 @@ pip3 install torch torchvision torchaudio  # (Or appropriate torch>2.0 from [htt
 pip install -r assets/requirements.txt
 ```
 
-**Dataset Generation**: Please refer [here](dataset/README.md) for dataset generation code. 
+**Sampling from our FLUX fine-tuned model**
 
-**Model Training**: Please refer [here](method/README.md) for dataset filtering and SDXL model training code. 
+Download the pretrained model and reference image:
+```
+cd method
+mkdir -p pretrained_model
+wget https://huggingface.co/spaces/nupurkmr9/SynCD/resolve/main/models/pytorch_model.bin?download=true -O pretrained_model/pytorch_model.bin
+wget https://www.cs.cmu.edu/~syncd-project/assets/actionfigure_1.tar.gz
+tar -xvzf actionfigure_1.tar.gz
+```
+
+```python
+
+python sample_flux.py --prompt "An action figure on a beach. Waves in the background. Realistic shot." --ref_images actionfigure_1 --finetuned_path pretrained_model/pytorch_model.bin --numref 3 --true_cfg_scale 1.5
+
+# For faster sampling, you can disable seprate image and text guidance by setting true_cfg_scale to 1.0. 
+```
+This should generate an image like below:
+
+<p align="center">
+<img src='assets/sample_flux.jpg' align="center" width=500>
+</p>
+
+**Generating your own Dataset**: Please refer [here](dataset/README.md) for dataset generation and filtering. 
+
+**Model Training with Generated Dataset**: Please refer [here](method/README.md) for SDXL and FLUX model fine-tuning code. 
 
 ## Todo:
 
 - [x] Release the synthetic dataset (SynCD): Avaialble to download [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main).
-- [x] Flux fine-tuning on our dataset. 
-- [ ] SDXL fine-tuning with deepspeed. 
+- [x] Flux fine-tuning on our dataset.
+- [ ] SDXL fine-tuning with deepspeed.
 
 ## Acknowledgements
 We are grateful to the below works for their code/data/model. Our code is built upon them. 

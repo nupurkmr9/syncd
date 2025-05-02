@@ -209,7 +209,6 @@ class FluxSingleTransformerBlock(nn.Module):
             hidden_states=norm_hidden_states.to(dtype),
             image_rotary_emb=image_rotary_emb,
             **joint_attention_kwargs,
-            single=True,
         )
 
         hidden_states = torch.cat([attn_output, mlp_hidden_states], dim=2)
@@ -281,7 +280,6 @@ class FluxTransformerBlock(nn.Module):
             encoder_hidden_states=norm_encoder_hidden_states.to(dtype),
             image_rotary_emb=image_rotary_emb,
             **joint_attention_kwargs,
-            single=False,
         )
 
         # Process attention outputs for the `hidden_states`.

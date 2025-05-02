@@ -135,26 +135,29 @@ class SynCDDataset(Dataset):
     def setup_metadata(self,):
         self.images = defaultdict(list)
         self.prompts = defaultdict(list)
+        self.metadata_json = []
         self.metadata = []
         self.metadata_files = []
         counter = 0
         for DIR in self.rootdir:
             rootname = str(Path(DIR).stem)
             rootrootname = str(Path(DIR).parent)
-            if self.filter_aesthetics >= 0 and self.filter_dino >= 0:
-                assert os.path.exists(f'{rootrootname}/{rootname}_aesthetics.pt')
-                aesthetics_scores = torch.load(f'{rootrootname}/{rootname}_aesthetics.pt')
-                dino_scores = torch.load(f'{rootrootname}/{rootname}_dino.pt')
-
-            metadata_files = glob.glob(f'{DIR}/*metadata*.json')
+            if self.filter_dino > 0 or self.filter_aesthetics > 0:  
+                metadata_files = glob.glob(f'{DIR}/*metadata_with_scores.json')
+            else:
+                metadata_files = glob.glob(f'{DIR}/*metadata.json')
+            
             for metadata_file in metadata_files:
                 with open(metadata_file, 'r') as f:
                     metadata = json.load(f)
+                    self.metadata_json += metadata
                     for item in metadata:
                         valid_clique = [1] * len(item['filenames'])
-                        if self.filter_dino > 0 and self.filter_aesthetics > 0:
-                            dino_score = dino_scores['+'.join([Path(x).stem for x in item['filenames']])]
-                            valid_clique = [aesthetics_scores[Path(x).stem] >= self.filter_aesthetics for x in item['filenames']]
+                        if self.filter_dino > 0 or self.filter_aesthetics > 0:
+                            assert 'dino_scores' in item
+                            assert 'aesthetics_scores' in item
+                            dino_score = np.array(item['dino_scores'])
+                            valid_clique = [item['aesthetics_scores'][Path(x).stem] >= self.filter_aesthetics for x in item['filenames']]
                             valid_indices = [list(set(x).union(set(y))) for (x, y) in [((dino_score >= self.filter_dino) * (dino_score <= 0.98)).nonzero()]][0]
                             valid_clique = [x * (i in valid_indices) for i, x in enumerate(valid_clique)]
 
@@ -165,7 +168,8 @@ class SynCDDataset(Dataset):
                             counter += 1
                             self.metadata_files.append(item)
 
-        random.shuffle(self.metadata)
+        if self.train:
+            random.shuffle(self.metadata)
 
     def __len__(self):
         return len(self.metadata) * self.repeat
@@ -194,7 +198,11 @@ class SynCDDataset(Dataset):
             values = list(np.arange(0, num_images)) + list(-1*np.arange(1, num_images+1))
             indices_selected = list(np.random.choice(values, self.numref, replace=False))
 
-        global_ref_index = [indices_selected.index(np.random.choice([num for num in indices_selected if num not in [x, -(x+1), -x-1]])) for x in indices_selected][:1] + np.arange(1, len(indices_selected)).tolist()
+        if self.train:
+            # when training with IP-Adapter, the global image condition for the first target index is randomly selected from the references [1:len(indices_selected)]
+            global_ref_index = [indices_selected.index(np.random.choice([num for num in indices_selected if num not in [x, -(x+1), -x-1]])) for x in indices_selected][:1] + np.arange(1, len(indices_selected)).tolist()
+        else:
+            global_ref_index = np.arange(len(indices_selected)).tolist()
 
         for i in indices_selected:
             if i < 0:
@@ -353,10 +361,11 @@ class CustomLoader(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.shuffle = shuffle
-        self.collate_fn = SynCDDataset.collate_fn
+        self.collate_fn = SynCDDataset.collate_fn  
+        if 'train' not in kwargs:  
+            kwargs['train'] = True
         self.train_dataset = data_class(mode=mode,
                                         regularization=regularization,
-                                        train=True,
                                         **kwargs)
 
     def prepare_data(self):

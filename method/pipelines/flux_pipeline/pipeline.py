@@ -383,7 +383,7 @@ class SynCDFluxPipeline(FluxPipeline):
                 self._current_timestep = t
                 # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
                 timestep = t.expand(latents.shape[0]).to(latents.dtype)
-                self.joint_attention_kwargs.update({'timestep': t/1000, 'val': True})
+                self.joint_attention_kwargs.update({'timestep': t/1000})
                 if self.joint_attention_kwargs is not None and self.joint_attention_kwargs['shared_attn'] and latents_ref is not None and latents_mask is not None:
                     latents = (1 - latents_mask) * latents_ref + latents_mask * latents
 
