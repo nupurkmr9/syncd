@@ -287,7 +287,6 @@ class GenCDDiffusion(nn.Module):
         prompt_dict = self.encode_prompt(batch, num)
         prompt_dict = {key:value.to(latents.dtype) for key, value in prompt_dict.items()}
 
-        ref_dict = {}
         noisy_latents = rearrange(noisy_latents, "b c h (n w) -> (b n) c h w", n=num)
         noisy_latents = self._pack_latents(noisy_latents, B, noisy_latents.shape[1], H, W // num)
         H1 = int(math.sqrt(noisy_latents.shape[1]))
@@ -309,8 +308,6 @@ class GenCDDiffusion(nn.Module):
             joint_attention_kwargs={
                 'attention_mask': batch['masks'].to(dtype=self.torch_dtype) if self.masked else None,
                 'timestep': timesteps[0].to(dtype=self.torch_dtype)/1000,
-                'mode': 'r',
-                'ref_dict': ref_dict,
                 'shared_attn': self.shared_attn,
                 'num': num
             }

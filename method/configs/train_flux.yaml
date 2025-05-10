@@ -16,8 +16,8 @@ data:
     batch_size: 1
     num_workers: 4
     rootdir: [['./syncd']]
-    img_size: 256
-    numref: 3
+    img_size: 512
+    numref: -1
     repeat: 1
     regularization: 0.0
     drop_both: 0.05
@@ -34,7 +34,7 @@ data:
     kernel_size: 5
 
 training:
-  max_steps: 15100
+  max_steps: 25100
   save_every: 5000
   gradient_accumulation_steps: 2
   base_learning_rate: 1.0
