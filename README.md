@@ -12,7 +12,7 @@
 
 We propose a pipeline for synthetic training data generation consisting of multiple images of the same object under different lighting, poses, and backgrounds, using either explicit 3D object assets or, more implicitly, using masked shared attention across different views. Given the training data, we train a new encoder-based model for customization/personalization. During inference, our method can successfully generate new compositions of a reference object using text prompts.
 
-***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br> (ArXiv 2025)    
+***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br> (ICCV 2025)    
 [Nupur Kumari](https://nupurkmr9.github.io/), [Xi Yin](https://xiyinmsu.github.io), [Jun-Yan Zhu](https://www.cs.cmu.edu/~junyanz/), [Ishan Misra](https://imisra.github.io), [Samaneh Azadi](https://github.com/azadis)<br>
 
 ### [website](https://www.cs.cmu.edu/~syncd-project/)  | [paper](https://arxiv.org/abs/2502.01720)  | [Demo](https://huggingface.co/spaces/nupurkmr9/SynCD) 
