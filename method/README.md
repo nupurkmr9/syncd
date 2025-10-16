@@ -37,7 +37,7 @@ This should generate an image like below:
 
 ```python
 # sample from FLUX model
-python sample_flux.py --prompt "An action figure on a beach. Waves in the background. Realistic shot." --ref_images actionfigure_1 --finetuned_path pretrained_model/pytorch_model.bin --numref 3 --true_cfg_scale 1.5
+python sample_flux.py --prompt "An action figure on top of a mountain, sunset in the background. Realistic shot." --ref_images actionfigure_1 --finetuned_path pretrained_model/pytorch_model.bin --numref 3 --true_cfg_scale 1.5
 
 # For faster sampling, you can disable seprate image and text guidance by setting true_cfg_scale to 1.0. 
 ```
