@@ -105,7 +105,7 @@ tar -xvzf actionfigure_1.tar.gz
 
 ```python
 
-python sample_flux.py --prompt "An action figure on a beach. Waves in the background. Realistic shot." --ref_images actionfigure_1 --finetuned_path pretrained_model/pytorch_model.bin --numref 3 --true_cfg_scale 1.5
+python sample_flux.py --prompt "An action figure on top of a mountain, sunset in the background. Realistic shot." --ref_images actionfigure_1 --finetuned_path pretrained_model/pytorch_model.bin --numref 3 --true_cfg_scale 1.5
 
 # For faster sampling, you can disable seprate image and text guidance by setting true_cfg_scale to 1.0. 
 ```
@@ -123,7 +123,6 @@ This should generate an image like below:
 
 - [x] Release the synthetic dataset (SynCD): Avaialble to download [here](https://huggingface.co/datasets/nupurkmr9/syncd/tree/main).
 - [x] Flux fine-tuning on our dataset.
-- [ ] SDXL fine-tuning with deepspeed.
 
 ## Acknowledgements
 We are grateful to the below works for their code/data/model. Our code is built upon them. 
@@ -139,10 +138,10 @@ We are grateful to the below works for their code/data/model. Our code is built 
 ## BibTeX
 
 ```
-@article{kumari2025syncd,
+@inproceedings{kumari2025syncd,
   title={Generating Multi-Image Synthetic Data for Text-to-Image Customization},
   author={Kumari, Nupur and Yin, Xi and Zhu, Jun-Yan and Misra, Ishan and Azadi, Samaneh},
-  journal={ArXiv},
+  booktitle={IEEE International Conference on Computer Vision (ICCV)},
   year={2025}
 }
 ```

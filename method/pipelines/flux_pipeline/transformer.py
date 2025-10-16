@@ -38,8 +38,17 @@ from diffusers.utils.torch_utils import maybe_allow_in_graph
 from einops import rearrange
 from peft.tuners.lora.layer import LoraLayer
 
+# Import flex_attention for optimized attention with fixed masks
+try:
+    from torch.nn.attention.flex_attention import flex_attention, create_block_mask
+    FLEX_ATTENTION_AVAILABLE = True
+except ImportError:
+    FLEX_ATTENTION_AVAILABLE = False
+
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
+flex_attention_func = None
+block_mask = None
 
 class FluxAttnProcessor2_0:
     """Attention processor used typically in processing the SD3-like self-attention projections."""
@@ -114,7 +123,42 @@ class FluxAttnProcessor2_0:
             query = apply_rotary_emb(query, image_rotary_emb).to(hidden_states.dtype)
             key = apply_rotary_emb(key, image_rotary_emb).to(hidden_states.dtype)
 
-        if neg_mode:
+        if neg_mode and FLEX_ATTENTION_AVAILABLE:
+            # Apply flex_attention with the block mask
+            global flex_attention_func, block_mask
+            if flex_attention_func is None:
+                flex_attention_func = torch.compile(flex_attention, dynamic=False)
+                res = int(math.sqrt((end_of_hidden_states-(text_seq if encoder_hidden_states is None else 0)) // num))
+                seq_len = query.shape[2]
+
+                def block_diagonal_mask(b, h, q_idx, kv_idx):
+                    text_offset = 512
+                    # Text tokens (first 512) can attend to everything
+                    # Use tensor operations instead of if statements
+                    is_text = (q_idx < text_offset) | (kv_idx < text_offset)
+                    
+                    # For spatial tokens, compute which block they belong to
+                    q_spatial = q_idx - text_offset
+                    kv_spatial = kv_idx - text_offset
+                    
+                    # Determine block indices
+                    q_block = (q_spatial // res) % num
+                    kv_block = (kv_spatial // res) % num
+                    
+                    # Only attend within the same block
+                    same_block = (q_block == kv_block)
+                    
+                    # Return: text can attend to everything OR same block
+                    return is_text | same_block
+
+                # Create block mask for efficiency
+                block_mask = create_block_mask(block_diagonal_mask, B=1, H=None, 
+                                                Q_LEN=seq_len, KV_LEN=seq_len, device=query.device)
+
+            hidden_states = flex_attention_func(query, key, value, block_mask=block_mask)
+            hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
+        elif neg_mode:
+            # Fallback to original implementation if flex_attention is not available
             res = int(math.sqrt((end_of_hidden_states-(text_seq if encoder_hidden_states is None else 0)) // num))
             hw = res*res
             mask_ = torch.zeros(1, res, num*res, res, num*res).to(query.device)
@@ -125,9 +169,12 @@ class FluxAttnProcessor2_0:
             mask[:, 512:, 512:] = mask_
             mask = mask.bool()
             mask = rearrange(mask.unsqueeze(0).expand(attn.heads, -1, -1, -1), "nh b ... -> b nh ...")
-
-        hidden_states = F.scaled_dot_product_attention(query, key, value, dropout_p=0.0, is_causal=False, attn_mask=mask)
-        hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
+            hidden_states = F.scaled_dot_product_attention(query, key, value, dropout_p=0.0, is_causal=False, attn_mask=mask)
+            hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
+        else:
+            # No masking needed
+            hidden_states = F.scaled_dot_product_attention(query, key, value, dropout_p=0.0, is_causal=False, attn_mask=None)
+            hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
 
         hidden_states = hidden_states.to(query.dtype)
 

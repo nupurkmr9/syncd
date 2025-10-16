@@ -6,16 +6,16 @@ import deepspeed
 import torch
 import torch.distributed as dist
 import wandb
-from data.data import (  # You'll need to create this based on your data loading logic
-    ConcatDataset,
-)
 from deepspeed.utils.zero_to_fp32 import load_state_dict_from_zero_checkpoint
 from omegaconf import OmegaConf
-from pipelines.flux_pipeline.model import GenCDDiffusion
 from prodigyopt import Prodigy
 from torch import distributed as dist
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm import tqdm
+
+# local imports
+from pipelines.flux_pipeline.model import SynCDDiffusion
+from data.data import ConcatDataset
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.set_float32_matmul_precision("high")
@@ -75,7 +75,7 @@ def main():
 
 
     # Initialize model
-    model = GenCDDiffusion(
+    model = SynCDDiffusion(
         pretrained_model_name_or_path=config.model.pretrained_model_name_or_path,
         regularization_prob=config.model.regularization_prob,
         num=config.model.num,

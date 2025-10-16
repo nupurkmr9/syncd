@@ -1,6 +1,5 @@
 import glob
 import json
-import os
 import random
 from collections import defaultdict
 from pathlib import Path
@@ -8,10 +7,12 @@ from pathlib import Path
 import lightning as L
 import numpy as np
 import torch
-from data.utils_ import crop_by_mask, square_crop_shortest_side, square_crop_with_mask
 from PIL import Image, ImageFile, ImageFilter, ImageOps
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
+
+# local imports
+from data.utils_ import crop_by_mask, square_crop_shortest_side, square_crop_with_mask
 
 Image.MAX_IMAGE_PIXELS = None
 ImageFile.LOAD_TRUNCATED_IMAGES = True

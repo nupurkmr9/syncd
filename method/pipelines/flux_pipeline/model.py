@@ -17,7 +17,6 @@ def apply_flux_schedule_shift(noise_scheduler, sigmas, noise):
     # Resolution-dependent shifting of timestep schedules as per section 5.3.2 of SD3 paper
     shift = None
     # Resolution-dependent shift value calculation used by official Flux inference implementation
-    image_seq_len = (noise.shape[-1] * noise.shape[-2]) // 4
     mu = calculate_shift_flux(
         (noise.shape[-1] * noise.shape[-2]) // 4,
         noise_scheduler.config.base_image_seq_len,
@@ -53,7 +52,7 @@ def prepare_latent_image_ids(batch_size, height, width, device, dtype):
 
     return latent_image_ids.to(device=device, dtype=dtype)[0]
 
-class GenCDDiffusion(nn.Module):
+class SynCDDiffusion(nn.Module):
     def __init__(
         self,
         pretrained_model_name_or_path="black-forest-labs/FLUX.1-dev",
