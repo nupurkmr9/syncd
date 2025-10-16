@@ -10,7 +10,7 @@
 </p>
 </div>
 
-We propose a pipeline for synthetic training data generation consisting of multiple images of the same object under different lighting, poses, and backgrounds, using either explicit 3D object assets or, more implicitly, using masked shared attention across different views. Given the training data, we train a new encoder-based model for customization/personalization. During inference, our method can successfully generate new compositions of a reference object using text prompts.
+We propose a pipeline for synthetic training data generation consisting of multiple images of the same object under different lighting, poses, and backgrounds (as shown in (a)), using either explicit 3D object assets or, more implicitly, using masked shared attention across different views. Given the training data, we train a new encoder-based model for customization/personalization. During inference, our method can successfully generate new compositions of a reference object using text prompts with any number of reference images as input. Results with three and one reference image shown above in (b) and (c) respectively. 
 
 ***Generating Multi-Image Synthetic Data for Text-to-Image Customization*** <br> (ICCV 2025)    
 [Nupur Kumari](https://nupurkmr9.github.io/), [Xi Yin](https://xiyinmsu.github.io), [Jun-Yan Zhu](https://www.cs.cmu.edu/~junyanz/), [Ishan Misra](https://imisra.github.io), [Samaneh Azadi](https://github.com/azadis)<br>
@@ -69,8 +69,15 @@ https://github.com/user-attachments/assets/874eace8-a1dd-4c31-9226-f1cfb24f42bb
 <img src='assets/datapipeline.jpg' align="center" width=700>
 </p>
 
-Our dataset generation pipeline is tailored for (a) Deformable categories where we use descriptive prompts and Masekd Shared Attention (MSA) among foreground objects regions of the images to promote visual consistency. (b) Rigid object categories, where we additionally employ depth and cross-view warping using existing Objaverse assets to ensure 3D multiview consistency. We further use DINOv2 and aesthetic score to filter out low-quality images to create our final training dataset.
+Our dataset generation pipeline is tailored for (a) Deformable categories where we use descriptive prompts and Masked Shared Attention (MSA) among foreground objects regions of the images to promote consistent object identity. (b) Rigid object categories, where we additionally employ depth conditioning and cross-view feature warping using existing Objaverse assets to ensure 3D multiview consistency. We further use DINOv2 and aesthetic score to filter out low-quality images to create our final training dataset. The Masked Shared Attention (MSA) and feature warping mechanism is shown in the below figure.
 
+<p align="center">
+<img src='assets/msa.jpg' align="center" width=500>
+</p>
+
+**Warping and Masked Shared Attention**
+
+For rigid objects, we first warp corresponding features from the first image to the other. Then, each image feature attends to itself, and the foreground object features in other images. We show an example mask, M1, used to ensure this for the first image when generating two images with the same object.
 
 ## Model Overview
 
@@ -79,7 +86,7 @@ Our dataset generation pipeline is tailored for (a) Deformable categories where 
 <img src='assets/method.jpg' align="center" width=500>
 </p>
 
-We finetune a pre-trained IP-Adapter based model (global feature injection) on our generated dataset (SynCD). During training, we additionally employ Masked Shared Attention (MSA) between target and reference features of the image (fine-grained feature injection). This helps the model to incorporate more fine-grained features from multiple reference images during inference.
+We finetune a pre-trained text-to-image model on our generated dataset (SynCD). During training, we employ Shared Attention, similar to the dataset generation pipeline, between target and reference features of the image. This helps the model incorporate fine-grained features from multiple reference images as attention is agnostic of sequence length.
 
 ## Getting Started
 
