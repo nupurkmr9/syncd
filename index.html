@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RRD9XYJL5Q"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-RRD9XYJL5Q');
+  </script>
+
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="SynCD: Generating Multi-Image Synthetic Data for Text-to-Image Customization">
+  <meta property="og:title" content="SynCD: Generating Multi-Image Synthetic Data for Text-to-Image Customization"/>
+  <meta property="og:description" content=""/>
+  <meta property="og:url" content="https://www.cs.cmu.edu/~syncd-project/"/>
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
+  <meta property="og:image" content="https://www.cs.cmu.edu/~syncd-project/static/images/banner.jpg" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+
+  <meta name="twitter:title" content="SynCD: Generating Multi-Image Synthetic Data for Text-to-Image Customization">
+  <meta name="twitter:description" content="SynCD: Generating Multi-Image Synthetic Data for Text-to-Image Customization">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
+  <meta name="twitter:image" content="https://www.cs.cmu.edu/~syncd-project/static/images/banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="KEYWORDS SHOULD BE PLACED HERE">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <title>SynCD: Generating Multi-Image Synthetic Data for Text-to-Image Customization</title>
+  <!-- <link rel="icon" type="image/x-icon" href="static/images/favicon.ico"> -->
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+  rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const videoElement = document.getElementById('bg-video');
+
+        // When the video metadata is loaded
+        videoElement.addEventListener('loadedmetadata', function () {
+            videoElement.style.opacity = 1.0;
+        });
+    });
+
+    window.addEventListener("scroll", function () {
+        let imageDiv = document.querySelector('.full-page-image');
+        const videoElement = document.getElementById('bg-video');
+        if (window.scrollY > 75) {
+            videoElement.style.opacity = 0;
+        }
+        // Check if page is scrolled
+        if (window.scrollY > 50) { // You can adjust this value based on your requirement
+            imageDiv.classList.add('banner-state');
+            imageDiv.classList.add('ncont');
+            imageDiv.style.backgroundImage = `url(static/images/banner.jpg)`;
+        };
+    });
+
+    function copyToClipboard(element) {
+        var $temp = $("<input>");
+        $("body").append($temp);
+        $temp.val($(element).text()).select();
+        document.execCommand("copy");
+        $temp.remove();
+    }
+
+  </script>
+</head>
+<body>
+
+  <div class="full-page-image">
+    <video id="bg-video" autoplay loop muted playsinline style="width: 100%; height: auto; display: block;">
+        <source src="static/images/dataset_overview1.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <div class="jay" style="padding: 0 20px">
+      <h1 style="font-family: Poppins; font-size: 250%;">Generating Multi-Image Synthetic Data for Text-to-Image Customization</h1>
+      <p style="font-family: Poppins; font-size: 100%;">Sample generated dataset</p>
+    </div>
+    <!-- Overlay for optional text -->
+  </div>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Generating Multi-Image Synthetic Data for Text-to-Image Customization</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <span class="author-block">
+                <a href="https://nupurkmr9.github.io/" target="_blank">Nupur Kumari</a><sup>1</sup>,</span>
+                <span class="author-block">
+                  <a href="https://xiyinmsu.github.io/" target="_blank">Xi Yin</a><sup>2</sup>,</span>
+                  <span class="author-block">
+                    <a href="https://www.cs.cmu.edu/~junyanz/" target="_blank">Jun-Yan Zhu</a><sup>1</sup>,
+                  </span>
+                  <span class="author-block">
+                    <a href="https://imisra.github.io/" target="_blank">Ishan Misra</a><sup>2</sup>,
+                  </span>
+                  <span class="author-block">
+                    <a href="https://github.com/azadis" target="_blank">Samaneh Azadi</a><sup>2</sup>,
+                  </span>
+                  </div>
+
+                  <div class="is-size-5 publication-authors">
+                    <span class="author-block"><sup>1</sup>CMU, <sup>2</sup> Meta<br>ICCV 2025</span>
+                    <!-- <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span> -->
+                  </div>
+
+                  <div class="column has-text-centered">
+                    <div class="publication-links">
+                         <!-- Arxiv PDF link -->
+                      <span class="link-block">
+                        <a href="https://arxiv.org/pdf/2502.01720.pdf" target="_blank"
+                        class="external-link button is-normal is-rounded is-dark">
+                        <span class="icon">
+                          <i class="fas fa-file-pdf"></i>
+                        </span>
+                        <span>Paper</span>
+                      </a>
+                    </span>
+
+                  <!-- Github link -->
+                  <span class="link-block">
+                    <a href="https://github.com/nupurkmr9/syncd" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+                 <!-- Demo link -->
+                 <span class="link-block">
+                  <a href="https://huggingface.co/spaces/nupurkmr9/SynCD" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fas fa-external-link-alt"></i>
+                  </span>
+                  <span>HF Demo</span>
+                </a>
+              </span>
+
+                <!-- ArXiv abstract Link -->
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/2502.01720" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Teaser video-->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <img src="static/images/teaser.jpg" alt="Banner Image" class="banner-image">
+      <!-- <video poster="" id="tree" autoplay controls muted loop height="100%">
+        <source src="static/videos/banner_video.mp4"
+        type="video/mp4">
+      </video> -->
+      <h2 class="content has-text-justified">
+        We propose a data generation pipeline for customization consisting of multiple images of the same object in different contexts. The images are simultaneously generated while enforcing consistent object identity across the images using explicit prior from 3D Objaverse assets and more implicitly, using masked shared attention across different images. Sample images generated by our pipeline are shown in (a). Given the synthetic training data created via this pipeline, we train an encoder-based model for the task, which can successfully generate a reference object in new contexts with either three images or a single reference image of the object as shown in (b) and (c) respectively. 
+      </h2>
+    </div>
+  </div>
+</section>
+<!-- End teaser video -->
+
+<!-- Paper abstract -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Customization of text-to-image models enables users to insert new concepts or objects and generate them in unseen settings. Existing methods either rely on comparatively expensive test-time optimization or train encoders on single-image datasets without multi-image supervision, which can limit image quality. We propose a simple approach to address these challenges. We first leverage existing text-to-image models and 3D datasets to create a high-quality Synthetic Customization Dataset (<strong>SynCD</strong>) consisting of multiple images of the same object in different lighting, backgrounds, and poses. Using this dataset, we train an encoder-based model that incorporates fine-grained visual details from reference images via a shared attention mechanism. Finally, we propose an inference technique that normalizes text and image guidance vectors to mitigate overexposure issues in sampled images. Through extensive experiments, we show that our encoder-based model, trained on SynCD, and with the proposed inference algorithm, improves upon existing encoder-based methods on standard customization benchmarks.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End paper abstract -->
+
+
+
+<!-- Image carousel -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <center><h2 class="title is-3">Results</h2></center>
+      <div id="results-carousel" class="carousel results-carousel">
+       <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/sample1.jpg" alt="MY ALT TEXT"/>
+        <!-- <h2 class="subtitle has-text-centered">
+          First image description.
+        </h2> -->
+      </div>
+      <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/sample2.jpg" alt="MY ALT TEXT"/>
+      </div>
+      <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/sample3.jpg" alt="MY ALT TEXT"/>
+     </div>
+     <div class="item">
+      <!-- Your image here -->
+      <img src="static/images/sample4.jpg" alt="MY ALT TEXT"/>
+    </div>
+    <div class="item">
+      <!-- Your image here -->
+      <img src="static/images/sample5.jpg" alt="MY ALT TEXT"/>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+<!-- End image carousel -->
+
+
+
+
+<!-- Results comparison -->
+<section class="hero is-small is-light">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <center><h5 class="title is-3">Qualitative comparison</h5></center>
+      <br>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full">
+          
+          <img src="static/images/results_1input.png" alt="Results" class="youtube-video">
+        </div>
+      </div>
+      <!-- <br> -->
+      <hr>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full">
+          
+          <img src="static/images/results_3input.png" alt="Results" class="youtube-video">
+          <p>Results with one (top) and three reference images (bottom) as input. Our method can successfully incorporate the text prompt while preserving the object identity similar to or higher than the baseline methods. We pick the best out of four sampled images for all methods</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section class="section hero">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full">
+        <center><h2 class="title is-3">Synthetic Customization Data (SynCD) Overview </h2></center>
+        <br>
+          <center>
+            <img src="static/images/datapipeline.jpg" class="center-image blend-img-background">
+          </center>
+          <div class="content has-text-justified"></div>
+          <p>
+            Our dataset generation pipeline is tailored for (a) Deformable categories where we use descriptive prompts and Masked Shared Attention (MSA) among foreground objects regions of the images to promote consistent object identity. (b) Rigid object categories, where we additionally employ depth conditioning and cross-view feature warping using existing Objaverse assets to ensure 3D multiview consistency. We further use DINOv2 and aesthetic score to filter out low-quality images to create our final training dataset. The Masked Shared Attention (MSA) and feature warping mechanism is shown in the below figure.
+          </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section hero">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full">
+        <center><h2 class="title is-5">Feature Warping and Masked Shared Attention (MSA) </h2></center>
+        <br>
+          <center>
+            <img src="static/images/msa.jpg"  style="width: 70%;" class="center-image blend-img-background">
+          </center>
+          <div class="content has-text-justified"></div>
+          <p>
+            For rigid objects, we first warp corresponding features from the first image to the other. Then, each image feature attends to itself, and the foreground object features in other images. We show an example mask, M<sub>1</sub>, used to ensure this for the first image when generating two images with the same object. 
+          </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full">
+        <center><h2 class="title is-3">Model Training Overview </h2></center>
+        <br>
+          <center>
+            <img src="static/images/method.png" style="width: 80%;" class="center-image blend-img-background">
+          </center>
+          <div class="content has-text-justified"></div>
+          <p>
+            We finetune a pre-trained text-to-image model on our generated dataset. During training, we employ Shared Attention, similar to the dataset generation pipeline, between target and reference features of the image. This helps the model to incorporate fine-grained features from multiple reference images.
+          </p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End paper method -->
+
+<!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@inproceedings{kumari2025syncd,
+        title={Generating Multi-Image Synthetic Data for Text-to-Image Customization},
+        author={Kumari, Nupur and Yin, Xi and Zhu, Jun-Yan and Misra, Ishan and Azadi, Samaneh},
+        booktitle={International Conference on Computer Vision (ICCV)},
+        year={2025}
+      }</code></pre>
+    </div>
+</section>
+<!--End BibTex citation -->
+
+<section class="section" id="Acknowledgements">
+  <div class="container is-max-desktop content">
+    <h2 class="title">Acknowledgements</h2>
+    We thank Kangle Deng, Gaurav Parmar, and Maxwell Jones for their helpful comments and discussion and Ruihan Gao and Ava Pun for proofreading the draft. This work was partly done by Nupur Kumari during the Meta internship. The project was partly supported by the Packard
+    Fellowship, the IITP grant funded by the Korean Government (MSIT) (No. RS-2024-00457882, National AI Research Lab Project), NSF
+    IIS-2239076, and NSF ISS-2403303.
+    
+   </div>
+</section>
+
+
+  <footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Statcounter tracking code -->
+  
+<!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
+
+    <!-- End of Statcounter Code -->
+
+  </body>
+  </html>
