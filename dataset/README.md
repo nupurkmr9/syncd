@@ -28,7 +28,7 @@ python gen_deformable.py --save_attn_mask --outdir assets/metadata/deformable_da
 **Sample dataset generation** on a single Objaverse asset:
 
 ```
-wget https://www.cs.cmu.edu/~syncd-project/assets/prompts_objaverse.pt -P assets/generated_prompts/
+wget https://huggingface.co/datasets/nupurkmr9/syncd/resolve/main/prompts_objaverse.pt -P assets/generated_prompts/
 bash assets/unzip.sh assets/metadata/objaverse_rendering/
 
 torchrun --nnodes=1 --nproc_per_node=1 --node_rank=0 --master_port=12356  gen_rigid.py  --rootdir ./assets/metadata  --promptpath assets/generated_prompts/prompts_objaverse.pt  --outdir assets/metadata/rigid_data

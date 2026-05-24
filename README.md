@@ -106,7 +106,7 @@ Download the pretrained model and reference image:
 cd method
 mkdir -p pretrained_model
 wget https://huggingface.co/spaces/nupurkmr9/SynCD/resolve/main/models/pytorch_model.bin?download=true -O pretrained_model/pytorch_model.bin
-wget https://www.cs.cmu.edu/~syncd-project/assets/actionfigure_1.tar.gz
+wget https://nupurkmr9.github.io/syncd/assets/actionfigure_1.tar.gz
 tar -xvzf actionfigure_1.tar.gz
 ```
 
